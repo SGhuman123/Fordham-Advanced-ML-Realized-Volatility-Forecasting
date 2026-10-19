@@ -1,0 +1,10 @@
+[dev ffdlags SPY h=5] PER_A  2010-2017   2013 forecasts     0.1s
+[dev ffdlags SPY h=5] HAR_A  2010-2017   2013 forecasts     0.1s
+[dev ffdlags SPY h=5] EN_AL  2010-2017   2013 forecasts     0.3s
+[dev ffdlags SPY h=5] RF_AL  2010-2017   2013 forecasts    16.5s
+[dev ffdlags SPY h=5] EN_BL  2010-2017   2013 forecasts     0.8s
+[dev ffdlags SPY h=5] RF_BL  2010-2017   2013 forecasts    52.8s
+[dev ffdlags SPY h=5] EN_CL  2010-2017   2013 forecasts     0.4s
+[dev ffdlags SPY h=5] RF_CL  2010-2017   2013 forecasts    65.1s
+[dev ffdlags SPY h=5] EN_DL  2015-2017    755 forecasts     0.3s
+[dev ffdlags SPY h=5] RF_DL  2015-2017    755 forecasts    11.8s

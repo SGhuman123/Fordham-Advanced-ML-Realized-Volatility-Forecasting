@@ -1,0 +1,74 @@
+series,role,transform,T,ADF_stat,ADF_rejects_unit_root,KPSS_stat,KPSS_rejects_stationarity,verdict,dstar_dev,rho_retained
+SPY RV (target),target,level,3272,-6.94139476580143,1,1.93897350933722,1,persistent (long memory),NaN,NaN
+SPY RV (target),target,log,3272,-5.60111728284078,1,6.84508946507906,1,persistent (long memory),NaN,NaN
+ES RV (target),target,level,2013,-8.33121123865628,1,2.26093954150337,1,persistent (long memory),NaN,NaN
+ES RV (target),target,log,2013,-5.50503751255264,1,6.78390793651524,1,persistent (long memory),NaN,NaN
+rv_d,set A,level,3272,-6.94139476580143,1,1.93897350933722,1,persistent (long memory),NaN,NaN
+rv_d,set A,log,3272,-5.60111728284078,1,6.84508946507906,1,persistent (long memory),NaN,NaN
+rv_w,set A,level,3272,-7.38966914573535,1,1.9668693066041,1,persistent (long memory),NaN,NaN
+rv_w,set A,log,3272,-5.49292229301179,1,6.42060712189465,1,persistent (long memory),NaN,NaN
+rv_m,set A,level,3272,-6.32810618831262,1,2.20037857215142,1,persistent (long memory),NaN,NaN
+rv_m,set A,log,3272,-4.72659279900531,1,6.22838742437535,1,persistent (long memory),NaN,NaN
+negret_d,set B,level,3272,-9.59525136432059,1,2.34056820269069,1,persistent (long memory),0,0.999999999999998
+negret_w,set B,level,3272,-9.37000899481805,1,2.4570534188852,1,persistent (long memory),0,0.999999999999998
+negret_m,set B,level,3272,-5.49879691672814,1,2.91632137251469,1,persistent (long memory),0,1
+parkinson_d,set B,level,3272,-7.69586488660494,1,1.83136318996132,1,persistent (long memory),0,1
+parkinson_d,set B,log,3272,-5.95645700094348,1,6.12225997460596,1,persistent (long memory),NaN,NaN
+parkinson_w,set B,level,3272,-8.50238269575139,1,1.86057595241006,1,persistent (long memory),0,1
+parkinson_w,set B,log,3272,-5.99996078619051,1,6.08674998842467,1,persistent (long memory),NaN,NaN
+log_vix,set B,level,3272,-3.299778578495,1,5.35378682634433,1,persistent (long memory),0,1
+vrp,set B,level,3272,-8.56895031745784,1,3.22082843739177,1,persistent (long memory),0,1
+iv_atm_1m,set B,level,3272,-3.14471196795627,1,5.04031042187867,1,persistent (long memory),0,1
+iv_atm_1m,set B,log,3272,-3.08871399182397,1,6.42225030807962,1,persistent (long memory),NaN,NaN
+iv_atm_3m,set B,level,3272,-2.59231678246115,0,5.39234438004129,1,unit root,0.1,0.992395056226595
+iv_atm_3m,set B,log,3272,-2.48275875064343,0,6.28975017804009,1,unit root,NaN,NaN
+iv_atm_1y,set B,level,3272,-2.10973934109026,0,5.24074649331821,1,unit root,0.2,0.969028844639201
+iv_atm_1y,set B,log,3272,-2.03173664624517,0,5.52491056776818,1,unit root,NaN,NaN
+iv_skew_1m,set B,level,3272,-6.02858871091216,1,2.10847039043331,1,persistent (long memory),0,1
+iv_skew_1m,set B,log,3272,-5.86425053504546,1,2.74268950058575,1,persistent (long memory),NaN,NaN
+iv_term,set B,level,3272,-5.11714697477062,1,4.13649652908703,1,persistent (long memory),0,1
+t10y3m,set B,level,3272,-1.52467323694762,0,7.06013781923905,1,unit root,0.25,0.968197782840115
+dgs10,set B,level,3272,-1.56850638818558,0,25.5652000954845,1,unit root,0.3,0.960746173693618
+dgs10,set B,log,3272,-1.72903249660583,0,24.4075997848368,1,unit root,NaN,NaN
+vvix,set B,level,2954,-7.82214415693985,1,2.23241488647877,1,persistent (long memory),0,1
+vvix,set B,log,2954,-8.65014925543923,1,2.55707597488846,1,persistent (long memory),NaN,NaN
+skew,set B,level,3272,-5.70220089144721,1,14.2590628583254,1,persistent (long memory),0,0.999999999999999
+skew,set B,log,3272,-5.62862582626548,1,14.1994077774184,1,persistent (long memory),NaN,NaN
+vix9d_spread,set B,level,1760,-10.2779900987784,1,1.13612785781537,1,persistent (long memory),0,1
+log_vxn,set B,level,3272,-3.69190047839569,1,6.94173587224831,1,persistent (long memory),0,1
+log_rvx,set B,level,3272,-3.2112016196507,1,7.49537597533064,1,persistent (long memory),0,1
+ads,set C,level,3272,-4.58643314253719,1,4.24294106252269,1,persistent (long memory),0,0.999999999999999
+log_epu,set C,level,3272,-6.00799069751209,1,4.18212784564335,1,persistent (long memory),0,1
+ciss,set C,level,3272,-2.68712326025383,0,5.55414475154185,1,unit root,0.1,0.995083686912964
+ciss,set C,log,3272,-3.95546751078151,1,6.61627312378639,1,persistent (long memory),NaN,NaN
+news_sent,set C,level,3272,-2.98212024733973,1,5.02123618711359,1,persistent (long memory),0,0.999999999999999
+log_gpr,set C,level,3272,-10.5339391268743,1,1.59369025993264,1,persistent (long memory),0,1
+nfci,set C,level,3272,-4.70037238541997,1,5.02821352202242,1,persistent (long memory),0,1
+stlfsi4,set C,level,3272,-3.01292742403746,1,2.55750751772259,1,persistent (long memory),0,1
+hsi_sq,set C,level,3272,-9.7335576729727,1,1.75112121200461,1,persistent (long memory),0,1
+es_C_d,set D,level,2013,-8.5276785329377,1,2.07630790953087,1,persistent (long memory),0,1
+es_C_d,set D,log,2013,-5.54158705486069,1,6.50428593822092,1,persistent (long memory),NaN,NaN
+es_C_w,set D,level,2013,-7.76567582405878,1,2.15544295336823,1,persistent (long memory),0,1
+es_C_w,set D,log,2013,-5.71121596968269,1,6.12954331282011,1,persistent (long memory),NaN,NaN
+es_C_m,set D,level,2013,-5.56961606168145,1,2.83823085967189,1,persistent (long memory),0,1
+es_C_m,set D,log,2013,-4.5590464270586,1,6.02077020236574,1,persistent (long memory),NaN,NaN
+es_J_d,set D,level,2013,-9.49205966307808,1,4.43771129231604,1,persistent (long memory),0,1
+es_J_w,set D,level,2013,-7.72003647542378,1,4.80009882320596,1,persistent (long memory),0,0.999999999999999
+es_J_w,set D,log,2013,-6.36830321861025,1,8.66678961928791,1,persistent (long memory),NaN,NaN
+es_J_m,set D,level,2013,-4.27153667700503,1,6.15483863548072,1,persistent (long memory),0,1
+es_J_m,set D,log,2013,-3.72793935898487,1,9.05668671755075,1,persistent (long memory),NaN,NaN
+es_rsp_d,set D,level,2013,-8.47059584868158,1,2.21674580554308,1,persistent (long memory),0,1
+es_rsp_d,set D,log,2013,-5.35234150780336,1,6.83870085206308,1,persistent (long memory),NaN,NaN
+es_rsn_d,set D,level,2013,-8.38255465134444,1,2.28126159232658,1,persistent (long memory),0,0.999999999999999
+es_rsn_d,set D,log,2013,-5.82287323464892,1,6.65090823280226,1,persistent (long memory),NaN,NaN
+es_rsp_w,set D,level,2013,-7.44383525150905,1,2.29863358645013,1,persistent (long memory),0,0.999999999999999
+es_rsp_w,set D,log,2013,-5.56962378864235,1,6.45497863969371,1,persistent (long memory),NaN,NaN
+es_rsn_w,set D,level,2013,-7.83200034790475,1,2.37003468136676,1,persistent (long memory),0,1
+es_rsn_w,set D,log,2013,-5.85318906599944,1,6.29994273682675,1,persistent (long memory),NaN,NaN
+es_sqrtrq_rv,set D,level,2013,-13.7783946927602,1,0.319144034627137,0,stationary,0,1
+es_sqrtrq_rv,set D,log,2013,-5.69210091529632,1,6.78994746308034,1,persistent (long memory),NaN,NaN
+es_rk_d,set D,level,2013,-7.98200072245878,1,2.51795055690929,1,persistent (long memory),0,1
+es_rk_d,set D,log,2013,-5.30126997354653,1,6.90799230207574,1,persistent (long memory),NaN,NaN
+overnight_d,set D,level,2013,-8.33489586403848,1,2.12014073416763,1,persistent (long memory),0,1
+overnight_w,set D,level,2013,-7.94375755309079,1,2.19827495421217,1,persistent (long memory),0,1
+overnight_w,set D,log,2013,-5.65840096484106,1,6.53040692581467,1,persistent (long memory),NaN,NaN

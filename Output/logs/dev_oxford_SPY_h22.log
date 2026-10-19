@@ -1,0 +1,8 @@
+[dev oxford SPY h=22] PER_A  2010-2017   2013 forecasts     0.1s
+[dev oxford SPY h=22] HAR_A  2010-2017   2013 forecasts     0.1s
+[dev oxford SPY h=22] EN_A   2010-2017   2013 forecasts     0.2s
+[dev oxford SPY h=22] RF_A   2010-2017   2013 forecasts    16.5s
+[dev oxford SPY h=22] EN_C   2010-2017   2013 forecasts     0.9s
+[dev oxford SPY h=22] RF_C   2010-2017   2013 forecasts    88.1s
+[dev oxford SPY h=22] EN_COM 2010-2017   2013 forecasts     0.6s
+[dev oxford SPY h=22] RF_COM 2010-2017   2013 forecasts    97.8s

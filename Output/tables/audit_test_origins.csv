@@ -1,0 +1,4 @@
+h,test_origins,target_window_has_missing_day,more_than_20pct_missing,lag_window_22d_has_missing_day
+1,2200,33,33,531
+5,2196,143,12,527
+22,2179,532,19,510

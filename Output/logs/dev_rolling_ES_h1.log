@@ -1,0 +1,8 @@
+[dev rolling ES h=1] PER_A  2015-2017    755 forecasts     0.1s
+[dev rolling ES h=1] HAR_A  2015-2017    755 forecasts     0.0s
+[dev rolling ES h=1] EN_A   2015-2017    755 forecasts     0.2s
+[dev rolling ES h=1] RF_A   2015-2017    755 forecasts    13.4s
+[dev rolling ES h=1] EN_C   2015-2017    755 forecasts     0.4s
+[dev rolling ES h=1] RF_C   2015-2017    755 forecasts    27.2s
+[dev rolling ES h=1] EN_D   2015-2017    755 forecasts     0.3s
+[dev rolling ES h=1] RF_D   2015-2017    755 forecasts    34.8s

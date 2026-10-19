@@ -1,0 +1,8 @@
+[dev qmle SPY h=22] PER_A  2010-2017   2013 forecasts     0.1s
+[dev qmle SPY h=22] HAR_A  2010-2017   2013 forecasts     0.1s
+[dev qmle SPY h=22] EN_A   2010-2017   2013 forecasts     0.2s
+[dev qmle SPY h=22] RF_A   2010-2017   2013 forecasts    16.9s
+[dev qmle SPY h=22] EN_C   2010-2017   2013 forecasts     0.9s
+[dev qmle SPY h=22] RF_C   2010-2017   2013 forecasts    85.1s
+[dev qmle SPY h=22] EN_D   2015-2017    755 forecasts     0.3s
+[dev qmle SPY h=22] RF_D   2015-2017    755 forecasts     7.1s

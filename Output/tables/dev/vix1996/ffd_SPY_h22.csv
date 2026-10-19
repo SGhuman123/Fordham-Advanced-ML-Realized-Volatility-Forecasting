@@ -1,0 +1,2 @@
+model_set,feature,d_min,d_median,d_max,share_folds_ffd,mean_rho
+EN_AV,log_vix_only,0,0,0.05,0.0588235294117647,0.999906864331782
