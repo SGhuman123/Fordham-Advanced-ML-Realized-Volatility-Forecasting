@@ -1,0 +1,60 @@
+Run started 16-Oct-2026 11:56:25
+
+(a) Loaded: Risk Lab SPY 7707 rows (1996-01-02 to 2026-10-05); VOLARE ES 4397 rows (2009-09-30 to 2026-09-30); Oxford-Man 5552 rows (2000-01-03 to 2022-02-25)
+
+(b) NYSE calendar built: 7801 sessions 1996-2026
+Risk Lab SPY: 0 rows with missing/non-positive rv5_trade_vol, 0 duplicate dates removed
+VOLARE ES: 0 rows with missing/non-positive rv5, 0 duplicate dates removed
+Oxford-Man: 0 rows with missing/non-positive rv5, 0 duplicate dates removed
+SPY: 5473 NYSE sessions 2005-01-03 to 2026-10-05; 33 missing (dev 0, test 33); 0 Risk Lab rows off the NYSE calendar
+SPY missing sessions: 2018-02-05, 2018-02-06, 2018-02-07, 2018-02-08, 2018-02-09, 2018-03-01, 2018-03-28, 2020-12-16, 2021-03-23, 2021-04-08, 2021-05-12, 2021-10-29, 2021-12-27, 2022-05-17, 2022-09-07, 2022-10-03, 2022-12-05, 2022-12-28, 2023-01-13, 2023-06-20, 2023-06-21, 2023-08-16, 2023-09-25, 2023-12-15, 2024-03-14, 2024-04-08, 2024-10-11, 2025-10-31, 2026-03-09, 2026-04-13, 2026-08-27, 2026-09-02, 2026-09-30
+ES: 121 rows on non-NYSE dates dropped (pre-2010 1, 2010-2017 55, 2018+ 65)
+ES: 4276 NYSE sessions 2009-09-30 to 2026-09-30; 0 missing
+Oxford-Man cross-check 2005-2022: 4293 common days, corr(variance) = 0.9676, corr(log variance) = 0.9604, median ratio RL/OM = 0.968
+
+(c) Full-sample HAR fits (OLS on variance scale; diagnostic only, includes test years)
+SPY h= 1  N=4901  b0=9.685e-06  b_d=0.295  b_w=0.508  b_m=0.081  (sum 0.884)  R2=0.557
+SPY h= 5  N=4831  b0=1.621e-05  b_d=0.296  b_w=0.352  b_m=0.160  (sum 0.808)  R2=0.605
+SPY h=22  N=4569  b0=3.396e-05  b_d=0.162  b_w=0.267  b_m=0.178  (sum 0.607)  R2=0.438
+ES  h= 1  N=4210  b0=1.655e-05  b_d=0.490  b_w=0.398  b_m=-0.036  (sum 0.852)  R2=0.633
+ES  h= 5  N=4206  b0=3.136e-05  b_d=0.484  b_w=0.247  b_m=-0.011  (sum 0.720)  R2=0.583
+ES  h=22  N=4189  b0=6.843e-05  b_d=0.254  b_w=0.131  b_m=0.005  (sum 0.390)  R2=0.261
+
+Autocorrelation of daily RV (pairwise complete; NaN days skipped)
+SPY RV     : lag1   0.698  lag5   0.547  lag10  0.437  lag22  0.281  lag50  0.101  lag100 0.084  lag250 0.008  
+SPY log RV : lag1   0.828  lag5   0.680  lag10  0.598  lag22  0.487  lag50  0.346  lag100 0.243  lag250 0.116  
+ES  RV     : lag1   0.777  lag5   0.550  lag10  0.361  lag22  0.111  lag50  0.020  lag100 -0.006  lag250 -0.017  
+ES  log RV : lag1   0.836  lag5   0.649  lag10  0.539  lag22  0.397  lag50  0.229  lag100 0.131  lag250 -0.001  
+
+Target smoothness (annualized-vol equivalents use sqrt(252*RV))
+SPY h= 1  std(y)=2.247e-04  std(daily change)=1.760e-04  mean ann. vol=11.6%
+SPY h= 5  std(y)=1.937e-04  std(daily change)=4.348e-05  mean ann. vol=11.9%
+SPY h=22  std(y)=1.709e-04  std(daily change)=1.286e-05  mean ann. vol=12.3%
+ES  h= 1  std(y)=2.917e-04  std(daily change)=1.948e-04  mean ann. vol=13.9%
+ES  h= 5  std(y)=2.583e-04  std(daily change)=5.541e-05  mean ann. vol=14.3%
+ES  h=22  std(y)=2.062e-04  std(daily change)=1.773e-05  mean ann. vol=14.7%
+
+SPY locked-test origins affected by missing days (proposal Section 3.2 table)
+h= 1  test origins 2200 | target window has missing 33 | 22-day lag window has missing 531 | usable 1650
+h= 5  test origins 2196 | target window has missing 143 | 22-day lag window has missing 527 | usable 1580
+h=22  test origins 2179 | target window has missing 532 | 22-day lag window has missing 510 | usable 1318
+
+(d) Walk-forward (expanding window, yearly re-fits, label gap h)
+tgt  per     h refits  origins  scored  floor MSE_HARx1e8   MSE_Px1e8   ratio  QLIKE_HAR    QLIKE_P   ratio
+SPY  dev     1      8     2012    2012      0      0.7919      1.0226   0.774     0.2147     0.2273   0.945
+SPY  test    1      9     2200    1650      0      2.8283      3.5544   0.796     0.2477     0.3187   0.777
+SPY  dev     5      8     2008    2008      0      0.4394      0.5834   0.753     0.2037     0.2225   0.916
+SPY  test    5      9     2196    1580      0      2.4269      2.9226   0.830     0.2403     0.3327   0.722
+SPY  dev    22      8     1991    1991      0      0.2934      0.3121   0.940     0.2556     0.2857   0.895
+SPY  test   22      9     2179    1318      0      3.1598      4.9379   0.640     0.4397     0.7007   0.628
+ES   dev     1      3      754     754      0      1.5682      1.9392   0.809     0.2183     0.2050   1.065
+ES   test    1      9     2197    2197      0      5.4288      6.1022   0.890     0.1920     0.2328   0.825
+ES   dev     5      3      750     750      0      0.8354      1.1492   0.727     0.2926     0.2662   1.099
+ES   test    5      9     2193    2193      0      5.6530      6.3897   0.885     0.2162     0.2836   0.762
+ES   dev    22      3      733     733      0      0.4680      0.6279   0.745     0.3196     0.3114   1.026
+ES   test   22      9     2176    2176      0      6.3141     10.4983   0.601     0.3898     0.6076   0.642
+SPY test origins h= 1: 2200 (proposal 2200) -> MATCH
+SPY test origins h= 5: 2196 (proposal 2196) -> MATCH
+SPY test origins h=22: 2179 (proposal 2179) -> MATCH
+Saved forecasts, re-fit coefficients and summary to C:\Users\ajhav\OneDrive\Documents\Aryan\Fordham MSQF\Advanced Machine Learning\RV Forecasting\Output
+Run finished 16-Oct-2026 11:56:58
