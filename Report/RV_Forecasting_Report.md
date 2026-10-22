@@ -12,18 +12,20 @@ abstract: |
 
   **Evaluation.** An annual expanding-window walk-forward re-fits every model each year and tunes on the last two training years. Losses are QLIKE (primary) and MSE, tested with Diebold–Mariano tests and the Model Confidence Set, plus a variance-swap check.
 
-  **Status.** This report documents the full implementation and its **development-period** results: pseudo-out-of-sample 2010–2017, with all models together on 2015–2017. The 2018–2026 test is locked and has not been run.
+  **Status.** The design was frozen on the development period (2005–2017) and the locked test, 2 January 2018 – October 2026, was then run once.
 
-  **Findings.**
+  **Findings on the locked test.**
 
-  - **1-day horizon:** the random forest cuts QLIKE by 26–37% against HAR for both targets, and significantly beats the Persistence floor.
-  - **5 and 22 days:** several models beat HAR. But none, HAR included, significantly beats naive Persistence, except the elastic net on set B for the ES target at 5 days.
-  - **RQ2:** once the elastic net is well behaved, the forest does not extract more from richer information than the elastic net does.
-  - **Horizon:** gains do not grow with the horizon.
+  - **SPY, 1 and 5 days:** the random forest on market features (set B or C) cuts QLIKE by 12–15% against HAR, significantly, and stays in the Model Confidence Set. The design's success criterion is met.
+  - **SPY 22 days and every ES horizon:** no model significantly beats HAR. The ES forests, trained on post-2009 data only, fail badly in the 2020 COVID spike.
+  - **Benchmarks:** HAR beats naive Persistence at every horizon for both targets, reversing the calm 2015–2017 development window.
+  - **RQ2:** the forest gains significantly more than the elastic net from richer features at 1 and 5 days, largely because the elastic net degrades.
+  - **RQ3:** the full-session ES target does not align better with the variance-swap payoff.
+  - **Horizon:** gains shrink with the horizon instead of growing.
 ---
 
 ::: {custom-style="Block Text"}
-**Status (16 October 2026; implements proposal v5.4).** Everything in the proposal is implemented and runs end to end in MATLAB: data alignment and publication lags; unit-root and stationarity diagnostics, fractional differencing chosen inside each training window, and the long-memory estimators; the Persistence benchmark; all three models on all four feature sets, at every horizon, for both targets; the walk-forward engine and the full evaluation suite; and all robustness checks, including the new FFD-lag variant. The numbers in Section 7 are **development-period** results. The locked 2018 – October 2026 test is gated behind a configuration flag and has not been run. Section 10 lists the decisions to settle before the test is unlocked; proposal v5.4 itself leaves two of them open (missing-day treatment and ES holiday rows).
+**Status (21 October 2026; implements proposal v5.4).** Everything in the proposal is implemented in one MATLAB pipeline and runs end to end. That covers data alignment and publication lags, the stationarity and long-memory diagnostics, fractional differencing chosen inside each training window, the Persistence benchmark, all three models on all four feature sets at every horizon for both targets, the walk-forward engine, the full evaluation suite and every robustness check. As proposal Section 5 prescribes, every setting was frozen on the development results (git tag `design-freeze`) before the 2018 – October 2026 test was run, once. Section 7 summarizes the development period that fixed the design. Section 8 reports the locked test, which is the basis for every conclusion.
 :::
 
 # 1. Introduction and Motivation
@@ -56,9 +58,10 @@ Our contribution is deliberately narrow:
 **How to read this report.**
 
 - Sections 2–6 follow the proposal's structure and give every definition and formula needed to reproduce the work.
-- Section 7 reports the development-period results.
-- Section 8 relates them to the reference papers.
-- Sections 9–11 cover applications, risks and open decisions, and the implementation.
+- Section 7 summarizes the development-period results on which the design was frozen.
+- Section 8 reports the locked 2018–2026 test.
+- Section 9 relates the results to the reference papers.
+- Sections 10–12 cover applications, risks and limitations, and the implementation.
 - The appendices give a feature dictionary, a line-by-line compliance check against proposal v5.4, the output files and a glossary.
 
 # 2. Research Questions and Hypotheses
@@ -72,14 +75,14 @@ Our contribution is deliberately narrow:
 The three questions are separable: a null finding on any one of them is still useful. In particular, we do not assume that implied volatility helps:
 
 - the set A → B comparison tests whether implied-vol features add forecasting power;
-- the set-B coefficients and importances (Section 7.8) show which part of the block does the work.
+- the set-B coefficients and importances (Section 8.7) show which part of the block does the work.
 
 **Success criterion** (proposal Section 6). On the locked test, the design counts as successful if both of the following hold:
 
 1. the elastic net or random forest has statistically lower QLIKE than HAR at one horizon or more, and the MCS includes the winner;
 2. the variance-swap check is directionally consistent.
 
-For RQ2 the question is answered either way, by the sign and significance of the RF-minus-EN gain. A well-documented failure to beat HAR is also a legitimate outcome (Kılıç, 2026). **Persistence is the floor:** a forecast that does not beat it is reported as uninformative at that horizon. The pipeline computes all of this automatically (Section 7.11).
+For RQ2 the question is answered either way, by the sign and significance of the RF-minus-EN gain. A well-documented failure to beat HAR is also a legitimate outcome (Kılıç, 2026). **Persistence is the floor:** a forecast that does not beat it is reported as uninformative at that horizon. The pipeline computes all of this automatically (Section 8.10).
 
 # 3. Data
 
@@ -89,7 +92,7 @@ The team's cleaned inputs are read unchanged from the project's data folder; eve
 |--------------------------|----------------------------------|------------------|----------------------|
 | Risk Lab SPY (Dacheng Xiu) | Daily annualized SPY volatility from intraday trades, regular session: rv5 (5-min subsampled), rv15, QMLE | 2 Jan 1996 – 5 Oct 2026; 7,707 days | **Main target** (rv5); set-A lags; rv15 and QMLE as robustness |
 | VOLARE ES | Daily variances from 1-second ES mid-quotes over the Globex session (18:00–17:00 ET): RV, bipower, ± semivariances, quarticity at 1-min and 5-min; realized kernel | 30 Sep 2009 – 30 Sep 2026; 4,397 rows | **Second target** (rv5); set D; rv1 and kernel as robustness |
-| Oxford-Man Realized Library (archived) | Daily S&P 500 index rv5, bipower, negative semivariance, cash session | 3 Jan 2000 – 25 Feb 2022 | Cross-check of the SPY target (correlation 0.968); pre-2010 jump robustness |
+| Oxford-Man Realized Library (archived) | Daily S&P 500 index rv5, bipower, negative semivariance, cash session | 3 Jan 2000 – 25 Feb 2022 | Cross-check of the SPY target (correlation 0.968 over 4,293 common days, reproduced by `data_audit.m`); pre-2010 jump robustness |
 | Bloomberg IV surface | Daily SPX implied vol, 7 moneyness levels × 6 tenors (1–24 months) | 3 Jan 2005 – 1 Oct 2026; 5,471 days | Set B: ATM level, skew, term slope; fixes the 2005 sample start |
 | Cboe indices | Daily VIX, VIX9D, VIX3M, VIX6M, VIX1Y, SKEW | VIX from 1990; VIX3M from Sep 2009; VIX9D from Jan 2011 | Set B (log VIX, VRP, term structure); VIX² is the variance-swap strike |
 | `features_daily.csv`: market | Daily S&P 500 OHLC and returns; Hang Seng; VVIX, VXN, VXD, RVX | 1990 – 6 Oct 2026; VVIX from Mar 2006 | Set B; Hang Seng in set C |
@@ -136,14 +139,14 @@ Pre-2005 Risk Lab data enter only a VIX-only robustness check.
 
 *Affected Risk Lab SPY test origins (reproduced from the raw files; matches proposal v5.4, Section 3.2).*
 
-- **Provisional treatment (an open decision).** Proposal v5.4 states that the treatment of missing days "will be decided now that the counts are measured". Until the team decides, the code applies four rules:
+- **Treatment, frozen before the test.** Proposal v5.4 left the treatment of missing days to be decided once the counts were measured. The team froze four rules, all switches in `rv_config.m` / `build_design.m`:
   1. a multi-day target is dropped if more than 20% of its window is missing;
   2. weekly and monthly RV lags are built from the observed days if at least 80% of the window is present;
   3. an origin whose own $\mathrm{RV}_t$ is missing is dropped, for every model alike;
-  4. on a day when a daily input has no value (e.g. a bond holiday), its last published value is used, which uses no future information.
+  4. on a day when a daily input has no value (e.g. a bond holiday), its last published value is used for at most 5 sessions (10 for weekly series), which uses no future information.
 
-  All four rules are switches in `rv_config.m` / `build_design.m`. None affects the development results, because development has no missing Risk Lab days.
-- **ES holiday sessions.** VOLARE has 121 rows on non-NYSE dates (abbreviated Globex holiday sessions). Their variance is rolled into the next NYSE day, so each target spans one close-to-close interval; dropping them is a robustness check. This handling is pending the professor's confirmation.
+  None of these affects the development results, because development has no missing Risk Lab days. A **strict** alternative is run as a robustness check (scenario `strict`): any origin whose target or 22-day lag window touches a missing day is dropped. On the test this removes about a quarter of the SPY 22-day origins (2,160 → 1,647).
+- **ES holiday sessions.** VOLARE has 121 rows on non-NYSE dates (abbreviated Globex holiday sessions). Their variance is rolled into the next NYSE day, so each target spans one close-to-close interval; dropping them is a robustness check (scenario `holdrop`).
 
 ## 3.3 Limitations
 
@@ -173,7 +176,7 @@ For ES, VOLARE rv5 is already a daily variance of 5-minute mid-quote returns ove
 | Set | Contents (exact features: Appendix A) | First date |
 |--------------|-----------------------------------------------------------|------------------|
 | **A: HAR lags** | Daily, weekly (5-day) and monthly (22-day) averages of the target's own RV | Jan 2005 (SPY), Jan 2010 (ES) |
-| **B: + market** | A + negative-return averages (d/w/m), Parkinson range (d/w), log VIX, VRP $=\mathrm{VIX}^2/252-\mathrm{RV}^{(m)}$, IV surface (ATM 1M/3M/1Y, 1M skew, 1Y−1M term slope), 10Y yield and 10Y−3M spread, VVIX, SKEW, VIX9D−VIX, log VXN, log RVX | Jan 2005; VVIX, VIX9D from their start + $\ell_\tau$ |
+| **B: + market** | A + negative-return averages (d/w/m), Parkinson range (d/w), log VIX, VRP $=\mathrm{VIX}^2/252-\mathrm{RV}^{(m)}$, IV surface (ATM 1M/3M/1Y, 1M skew, 1Y−1M term slope), 10Y yield and 10Y−3M spread, VVIX, SKEW, VIX9D−VIX, VIX3M−VIX, log VXN, log RVX | Jan 2005; VVIX, VIX3M, VIX9D from their start + $\ell_\tau$ |
 | **C: + macro/stress** | B + real-time ADS, log EPU, news sentiment, log GPR, CISS, NFCI, STLFSI4, squared Hang Seng return, calendar flags | Jan 2005; real-time ADS from Dec 2008 |
 | **D: + ES measures** | C + ES continuous/jump averages (d/w/m), ± semivariances (d/w), $\sqrt{\mathrm{RQ}}\times\mathrm{RV}$, realized kernel, overnight variance $\max(\mathrm{ES}-\mathrm{SPY},0)$ (d/w) | Jan 2010 |
 
@@ -219,11 +222,11 @@ EQNUM(5)
 - **What stays raw.** The target is never transformed, and the same raw HAR lags enter both ML models, so they still nest HAR.
 - **Robustness.** An FFD variant in which the ML lag block is replaced by FFD log RV is a robustness check.
 
-**Diagnosis on the development sample** (2005–2017; 2010–2017 for ES and set D; `stationarity.m`). ADF and KPSS were run on both targets and every input, in levels and, for positive series, in logs: 73 tests in all.
+**Diagnosis on the development sample** (2005–2017; 2010–2017 for ES and set D; `stationarity.m`). ADF and KPSS were run on both targets and every input, in levels and, for positive series, in logs: 74 tests in all.
 
 | Verdict | Count | Series |
 |----------------------|------|------------------------------------------------------------|
-| ADF rejects a unit root **and** KPSS rejects stationarity ("persistent / long memory") | 64 | Both targets and the HAR lags; returns, ranges, VIX, VRP, skew, term slope, VVIX, SKEW, cross-market IV; ADS, EPU, news, GPR, NFCI, STLFSI4; every ES measure |
+| ADF rejects a unit root **and** KPSS rejects stationarity ("persistent / long memory") | 65 | Both targets and the HAR lags; returns, ranges, VIX, VRP, skew, term slope, VVIX, SKEW, VIX9D and VIX3M spreads, cross-market IV; ADS, EPU, news, GPR, NFCI, STLFSI4; every ES measure |
 | ADF cannot reject a unit root | 8 | ATM 3M and 1Y implied vol, 10Y−3M spread, 10Y yield, CISS (level) |
 | Stationary on both tests | 1 | $\sqrt{\mathrm{RQ}}\times\mathrm{RV}$ |
 
@@ -316,7 +319,7 @@ EQNUM(9)
 - **The mixing parameter $\alpha$** blends ridge ($\alpha=0$) and lasso ($\alpha=1$).
 - **Tuning.** Both $\alpha\in\{0,0.1,0.25,0.5,0.75,0.9,1\}$ and a 50-point $\lambda$ path are tuned on validation QLIKE, so ridge and lasso are special cases rather than separate models.
 - **Implementation.** MATLAB's `lasso` handles $\alpha>0$; the ridge case is solved in closed form in the same scaling. Predictors are standardized with training-window statistics only.
-- **Reporting.** Following Kılıç (2026), the selected coefficients are reported as a result (Section 7.8).
+- **Reporting.** Following Kılıç (2026), the selected coefficients are reported as a result (Section 8.7).
 
 ## 4.7 Model 3: Random forest
 
@@ -339,7 +342,7 @@ The following are out of scope:
 - gradient boosting, neural nets and LSTMs;
 - forecast combinations.
 
-$\mathrm{VIX}^2$ remains the **market strike** in the variance-swap test, not a competing forecast. The optional exploratory boosting run on the winning feature set has not been carried out.
+$\mathrm{VIX}^2$ remains the **market strike** in the variance-swap test, not a competing forecast. The optional exploratory boosting run on the winning feature set was not carried out.
 
 # 5. Validation Design
 
@@ -378,7 +381,7 @@ The test period is examined once; anything changed afterwards is labelled explor
 
 # 6. Evaluation
 
-All scores are strictly out of sample and computed on the same origins for every forecast. This report gives them for the development pseudo-out-of-sample period.
+All scores are strictly out of sample and computed on the same origins for every forecast. They are reported for the development pseudo-out-of-sample period (Section 7) and for the locked test (Section 8).
 
 | Area | Metrics |
 |--------------------|------------------------------------------------------------------|
@@ -438,14 +441,11 @@ EQNUM(16)
 - **SPY adjustment:** SPY RV omits the overnight move, so SPY forecasts are rescaled by the training ratio of mean squared close-to-close return to mean RV.
 - **Payoffs:** the actual close-to-close payoff is reported alongside.
 
-# 7. Results: Development Period
+# 7. Results: Development Period (2005–2017)
 
-Every number in this section is pseudo-out-of-sample. Two comparison samples are used:
+The development period is where the design was tuned and frozen; its numbers are pseudo-out-of-sample. All ten forecasts (Persistence, HAR, and EN/RF on sets A–D) share **2 January 2015 – 29 December 2017 ($n=755$)** for both targets; SPY sets A–C also share a longer sample, **2010–2017 ($n=2{,}013$)**.
 
-- **All ten forecasts together** (Persistence, HAR, and EN/RF on sets A–D): **2 January 2015 – 29 December 2017 ($n=755$)**, for both targets. This short window is forced by the five-year burn-in.
-- **SPY sets A–C:** a longer common sample, **2010–2017 ($n=2{,}013$)**.
-
-Ratios are model loss ÷ HAR loss, so values below 1 beat HAR. Table notation:
+Ratios are model QLIKE ÷ HAR QLIKE, so values below 1 beat HAR. Table notation, used throughout Sections 7 and 8:
 
 - **bold** = significantly lower QLIKE than HAR (one-sided DM, $p<0.05$);
 - ✓ = in the 10% MCS;
@@ -455,229 +455,262 @@ Ratios are model loss ÷ HAR loss, so values below 1 beat HAR. Table notation:
 
 | Target | $h$ | HAR QLIKE | Persist. | EN A | RF A | EN B | RF B | EN C | RF C | EN D | RF D |
 |------|----|------|------|------|------|------|------|------|------|------|------|
-| SPY | 1 | 0.254 | 0.952 | 1.000 | **0.815** ✓† | 1.675 | **0.740** ✓† | 1.596 | **0.709** ✓† | 0.889 ✓ | **0.714** ✓† |
-| SPY | 5 | 0.263 ✓ | 1.078 ✓ | 1.000 ✓ | 1.036 ✓ | 1.335 ✓ | **0.919** ✓ | 1.629 ✓ | 1.052 ✓ | **0.885** ✓ | 0.928 ✓ |
-| SPY | 22 | 0.317 ✓ | 0.884 ✓ | 1.000 ✓ | 0.922 ✓ | **0.854** ✓ | 0.940 ✓ | 0.955 ✓ | 1.470 ✓ | 1.107 ✓ | 1.078 ✓ |
-| ES | 1 | 0.217 | 0.943 | 1.021 | **0.874** ✓† | **0.800** | **0.630** ✓† | 0.861 | **0.628** ✓† | **0.759** ✓ | **0.633** ✓† |
-| ES | 5 | 0.292 | 0.895 ✓ | 1.018 | **0.887** ✓ | **0.657** ✓† | **0.812** ✓ | **0.735** ✓ | **0.781** ✓ | **0.721** ✓ | **0.764** ✓ |
-| ES | 22 | 0.325 ✓ | 0.942 ✓ | 1.185 ✓ | 0.967 ✓ | 0.943 ✓ | 1.016 ✓ | 1.084 ✓ | 1.052 ✓ | 1.173 ✓ | 1.064 ✓ |
-
-- **1 day.** The random forest on any set beats both HAR and Persistence. QLIKE falls 26–29% for SPY (sets B–D) and 37% for ES, and both HAR and Persistence drop out of the MCS.
-- **5 days.** Several models beat HAR; for ES, every enriched model does. But only the elastic net on set B for ES also beats Persistence significantly.
-- **22 days.**
-  - For SPY, the elastic net on set B beats HAR ($p=0.04$). Nothing beats Persistence, which itself has a lower QLIKE than HAR (0.884).
-  - For ES, nothing beats either benchmark.
-- **Persistence vs HAR.** On 2015–2017, HAR does not significantly beat naive Persistence at any horizon. Under the proposal's rule, HAR itself is therefore "uninformative" on this window. Section 7.5 shows why: 2015–2017 was mostly calm, and Persistence wins on calm days but loses heavily on volatility spikes. On the longer SPY sample (2010–2017), HAR beats Persistence at every horizon (Persistence ratio 1.06 / 1.09 / 1.10).
-- **MSE.** Under MSE, no improvement over HAR is significant anywhere, and every model is in the MSE MCS.
-- **Out-of-sample $R^2$:**
-
-| | $h=1$ | $h=5$ | $h=22$ |
-|---|---|---|---|
-| SPY: HAR | 0.33 | 0.48 | 0.57 |
-| SPY: best model | 0.44 | 0.59 | 0.69 |
-| ES: HAR | 0.26 | 0.26 | 0.24 |
-| ES: best model | 0.46 | 0.43 | 0.36 |
+| SPY | 1 | 0.254 | 0.952 | 1.000 | **0.815**† | 1.675 | **0.745**† | 1.596 | **0.705** ✓† | 0.978 | **0.714** ✓† |
+| SPY | 5 | 0.263 ✓ | 1.078 ✓ | 1.000 ✓ | 1.036 ✓ | 1.335 ✓ | 0.995 ✓ | 1.625 | 0.967 ✓ | 0.935 ✓ | **0.914** ✓ |
+| SPY | 22 | 0.317 ✓ | 0.884 ✓ | 1.000 ✓ | 0.922 ✓ | **0.838** ✓ | 0.933 ✓ | 0.955 ✓ | 1.197 ✓ | 1.061 ✓ | 1.058 ✓ |
+| ES | 1 | 0.217 | 0.943 | 1.021 | **0.874**† | **0.777** | **0.615** ✓† | **0.802** | **0.625** ✓† | **0.753** | **0.614** ✓† |
+| ES | 5 | 0.292 | 0.895 ✓ | 1.018 | **0.887** ✓ | **0.646** ✓† | **0.844** ✓ | **0.740** ✓ | **0.754** ✓ | **0.709** ✓ | **0.819** ✓ |
+| ES | 22 | 0.325 ✓ | 0.942 ✓ | 1.185 ✓ | 0.967 ✓ | 0.944 ✓ | 1.035 ✓ | 1.114 ✓ | 1.028 ✓ | 1.152 ✓ | 0.976 ✓ |
 
 **Longer SPY sample, sets A–C (2010–2017, $n=2{,}013$):**
 
 | $h$ | Persistence | EN A | RF A | EN B | RF B | EN C | RF C |
 |----|------|------|------|------|------|------|------|
-| 1 | 1.06 | 1.00 | **0.89** | 2.93 | **0.80** | 2.63 | **0.78** ✓ |
-| 5 | 1.09 ✓ | 1.00 ✓ | 0.99 ✓ | 2.66 | **0.91** ✓ | 3.16 | 0.97 ✓ |
-| 22 | 1.10 ✓ | 1.01 ✓ | 0.97 ✓ | 1.91 | 0.98 ✓ | 3.98 | 1.27 ✓ |
+| 1 | 1.060 | 1.000 | **0.887**† | 2.925 | **0.797**† | 2.626 | **0.777** ✓† |
+| 5 | 1.092 ✓ | 1.002 ✓ | 0.988 ✓ | 2.656 | 0.947 ✓† | 3.157 | **0.916** ✓† |
+| 22 | 1.104 ✓ | 1.010 ✓ | 0.971 ✓ | 1.943 | 0.971 ✓ | 3.981 | 1.144 ✓ |
 
-- **1 day:** the forest gains 11–22%.
-- **5 days:** the forest on set B gains 9%.
-- **22 days:** HAR is not beaten.
-- **The elastic net on sets B and C** is far worse than HAR. It hits the forecast floor on 8–12% of days (Section 7.7).
+## 7.2 What the development period showed
 
-![*Figure 4.* SPY target, $h=22$: realized 22-day volatility and the HAR, best elastic-net and best random-forest forecasts, 2015–2017.](figures/forecasts_SPY_h22.png){width=100%}
+- **1 day.** The random forest on any set beats HAR, by 18–30% for SPY and 13–39% for ES, and it is the only forecast that also significantly beats Persistence.
+- **5 and 22 days.** Several models beat HAR, but apart from the ES elastic net on set B at 5 days, none significantly beats Persistence. HAR does not significantly beat Persistence on 2015–2017 either, a calm window in which "tomorrow looks like today" is hard to beat.
+- **RQ1 (set A).** The elastic net on set A reproduces HAR (validation picks almost no shrinkage). The set-A forest beats HAR at 1 day for both targets (ratios 0.89 and 0.87) and at 5 days for ES.
+- **RQ2.** The significant positive differences-in-differences come from the elastic net breaking down on SPY sets B and C, where it hits the forecast floor on 8–12% of days. Where neither model breaks down (set D for SPY, every ES set), the forest never gains significantly more.
+- **RQ3.** At 22 days, ES-target forecasts line up better with the variance-swap payoff than SPY-target ones: every estimated ES model has a signal–payoff correlation of 0.23–0.41, against −0.11 to 0.38 for SPY.
+- **Robustness.** Every robustness scenario reproduces the 1-day result (best forest 0.61–0.84 against HAR, significant against both benchmarks). The strict missing-day rule gives results identical to the main design, because development has no missing Risk Lab day.
 
-![*Figure 5.* ES target, $h=22$. In record-low-volatility 2017, every model stays above realized volatility: no model forecasts below the range it was trained on.](figures/forecasts_ES_h22.png){width=100%}
+## 7.3 What was frozen
 
-## 7.2 RQ1: volatility history only (set A)
+The design entering the test was the proposal's specification, unchanged, with the following choices fixed on the development data:
 
-The table gives QLIKE ratios between the four set-A forecasts, with the one-sided DM p-value for "first beats second" in parentheses. SPY uses 2010–2017 ($n=2{,}013$); ES uses 2015–2017 ($n=755$).
+- the four missing-day rules of Section 3.2 and the rolled-forward ES holiday rows;
+- the elastic net as specified in the proposal, **without** a guard against its breakdown on sets B and C (the team decided to report the breakdown as a finding rather than change the specification);
+- the forest's tuning budget (12 `bayesopt` evaluations, one seed) and every other setting in `rv_config.m`;
+- the feature sets of Section 4.2, including the VIX3M − VIX term-structure spread that proposal Section 4.2 lists for set B.
+
+The frozen code is git tag `design-freeze`. The test was then run once for the main design and every robustness scenario.
+
+# 8. Results: Locked Test (2018 – October 2026)
+
+Every number in this section comes from the single run of the frozen design. Re-fits happen at the last session of 2017 through 2025, so the test has nine re-fits. All ten forecasts share their sample from the first test day: $n=2{,}109$–$2{,}135$ for SPY (origins with a missing Risk Lab day or a target more than 20% missing drop out) and $n=2{,}176$–$2{,}197$ for ES.
+
+## 8.1 Forecast accuracy
+
+| Target | $h$ | HAR QLIKE | Persist. | EN A | RF A | EN B | RF B | EN C | RF C | EN D | RF D |
+|------|----|------|------|------|------|------|------|------|------|------|------|
+| SPY | 1 | 0.235 ✓ | 1.308 | 1.001 ✓† | 0.982 ✓† | 1.346 ✓ | **0.857** ✓† | 1.332 ✓ | **0.846** ✓† | 2.109 | 0.922 ✓† |
+| SPY | 5 | 0.215 ✓ | 1.366 | 0.999 ✓† | 1.051 ✓† | 0.959 ✓† | **0.883** ✓† | 1.973 ✓ | 0.930 ✓† | 2.878 | 1.149 ✓ |
+| SPY | 22 | 0.333 ✓ | 1.508 ✓ | 1.023 ✓† | 1.085 ✓† | 0.971 ✓ | 1.055 ✓† | 0.987 ✓ | 1.043 ✓ | 1.291 ✓ | 1.270 ✓ |
+| ES | 1 | 0.193 ✓ | 1.211 ✓ | 1.001 ✓† | 1.133 ✓ | 1.557 | 1.051 ✓ | 1.489 ✓ | 1.006 ✓† | 1.071 ✓† | 0.968 ✓† |
+| ES | 5 | 0.216 ✓ | 1.304 ✓ | 1.001 ✓† | 1.344 ✓ | 2.061 ✓ | 1.321 ✓ | 2.368 | 1.432 ✓ | 0.984 ✓† | 1.057 ✓† |
+| ES | 22 | 0.387 ✓ | 1.559 ✓ | 1.000 ✓† | 1.229 ✓† | 1.206 ✓ | 1.348 ✓ | 1.270 ✓ | 1.399 ✓ | 1.255 ✓ | 1.213 ✓ |
+
+- **SPY, 1 and 5 days: the forest on market features wins.** RF C (0.846) and RF B (0.857) at 1 day, and RF B (0.883) at 5 days, have significantly lower QLIKE than HAR ($p<0.01$), stay in the MCS and beat Persistence. That is a 12–15% loss reduction over nine years that include four stress episodes.
+- **SPY, 22 days: nothing beats HAR.** The best forecast is EN B (0.971, $p=0.33$).
+- **ES: nothing beats HAR at any horizon.** The best ratios are 0.968 (RF D, 1 day) and 0.984 (EN D, 5 days), neither significant. The ES forests on sets A–C are 23–43% *worse* than HAR at 5 and 22 days.
+- **HAR beats Persistence everywhere.** Persistence is 21–56% worse than HAR, and HAR's advantage is significant at every horizon for both targets ($p\le0.04$; Section 8.2). This reverses the development window, where calm 2015–2017 flattered Persistence.
+- **The MCS rarely discriminates.** HAR is in the 10% MCS in every case. The MCS removes the worst forecasts (Persistence at short SPY horizons, the elastic net on SPY set D) but cannot separate HAR from the winning forests.
+- **MSE.** Under MSE, no improvement over HAR is significant anywhere, and every forecast is in the MSE MCS. The best SPY 1-day ratio is RF C at 0.69 ($p=0.08$).
+- **The elastic net still breaks down on some sets.** On SPY set D it is 2.1–2.9 times worse than HAR at 1 and 5 days, and on ES sets B and C 1.5–2.4 times worse; floors bind on up to 3% of days.
+- **Out-of-sample $R^2$** (MSE-based, against the HAR training mean):
+
+| | $h=1$ | $h=5$ | $h=22$ |
+|---|---|---|---|
+| SPY: HAR | 0.53 | 0.48 | 0.09 |
+| SPY: best model | 0.67 (RF C) | 0.52 (RF B) | 0.25 (RF A) |
+| ES: HAR | 0.63 | 0.52 | 0.17 |
+| ES: best model | 0.63 (EN A) | 0.52 (EN A) | 0.17 (HAR) |
+
+![*Figure 4.* SPY target, $h=22$, locked test: realized 22-day volatility and the HAR, best elastic-net and best random-forest forecasts, 2018 – October 2026.](figures/forecasts_test_SPY_h22.png){width=100%}
+
+![*Figure 5.* ES target, $h=22$, locked test. In the March 2020 spike the set-D random forest, trained only on post-2009 data, stays near 22% while realized volatility passes 80%; HAR and the elastic net also lag but catch up within weeks.](figures/forecasts_test_ES_h22.png){width=100%}
+
+## 8.2 RQ1: volatility history only (set A)
+
+The table gives QLIKE ratios between the set-A forecasts, with the one-sided DM p-value for "first beats second" in parentheses.
 
 | Comparison | SPY $h=1$ | SPY $h=5$ | SPY $h=22$ | ES $h=1$ | ES $h=5$ | ES $h=22$ |
 |------------------|----------|----------|----------|----------|----------|----------|
-| HAR vs Persistence | 0.943 (0.14) | 0.916 (0.12) | 0.906 (0.31) | 1.061 (0.78) | 1.118 (0.85) | 1.062 (0.60) |
-| EN A vs HAR | 1.000 (0.91) | 1.002 (0.92) | 1.010 (0.86) | 1.021 (1.00) | 1.018 (1.00) | 1.185 (1.00) |
-| RF A vs HAR | **0.887** (<0.001) | 0.988 (0.39) | 0.971 (0.36) | **0.874** (0.008) | **0.887** (0.004) | 0.967 (0.24) |
-| RF A vs Persistence | **0.837** (<0.001) | 0.905 (0.06) | 0.880 (0.17) | **0.927** (0.036) | 0.992 (0.46) | 1.027 (0.55) |
+| HAR vs Persistence | **0.765** (<0.001) | **0.732** (<0.001) | **0.663** (0.038) | **0.826** (<0.001) | **0.767** (<0.001) | **0.641** (0.021) |
+| EN A vs HAR | 1.000 (0.95) | 0.999 (0.22) | 1.023 (0.90) | 1.000 (0.61) | 1.000 (0.62) | 1.000 (0.50) |
+| RF A vs HAR | 0.982 (0.20) | 1.051 (0.93) | 1.085 (0.96) | 1.133 (0.94) | 1.344 (0.95) | 1.229 (0.96) |
+| RF A vs Persistence | **0.751** (<0.001) | **0.769** (<0.001) | **0.720** (0.048) | 0.936 (0.20) | 1.031 (0.57) | **0.788** (0.045) |
 
-**Answer on development data:**
+**Answer.** With volatility history alone, **neither machine-learning model beats HAR** at any horizon, for either target.
 
-- **The elastic net on set A adds nothing.** Validation picks almost no shrinkage, so it reproduces HAR.
-- **The random forest beats HAR** at 1 day for both targets and at 5 days for ES. It is the only set-A forecast that significantly beats Persistence (at 1 day).
-- **HAR's own advantage over Persistence** is not significant on these windows.
-- **The horizon hypothesis is not supported.** Gains are largest at 1 day and do not grow with the horizon.
+- The elastic net on set A is HAR: validation chooses almost no shrinkage.
+- The set-A forest's 1-day advantage on the development period (0.87–0.89) does not survive the test. It is roughly level with HAR for SPY at 1 day and worse elsewhere.
+- **The horizon hypothesis is rejected.** Gains do not grow at 5 and 22 days; if anything, the forest falls further behind HAR as the horizon lengthens.
+- HAR, in turn, is informative: it beats the Persistence floor at every horizon.
 
-## 7.3 RQ2: does the random forest gain more from richer features?
+## 8.3 RQ2: does the random forest gain more from richer features?
 
-The table gives the QLIKE gain from set A to set $s$, as a % of each model's set-A loss. It also gives the difference-in-differences (eq. 15) and its one-sided p-value for "RF gains more".
+The table gives the QLIKE gain from set A to set $s$, as a % of each model's set-A loss, the difference-in-differences (eq. 15) and its one-sided p-value for "RF gains more".
 
-| Target (sample) | $h$ | Step | EN gain | RF gain | DiD | $p_1$ |
-|------------------|----|----------|----------|----------|----------|----------|
-| SPY (2010–17) | 1 | A→B / A→C | −193% / −163% | +10% / +12% | +0.43 / +0.37 | < 0.001 |
-| SPY (2015–17) | 1 | A→D | +11% | +13% | −0.00 | 0.54 |
-| SPY (2010–17) | 5 | A→B / A→C | −165% / −215% | +8% / +2% | +0.35 / +0.44 | < 0.001 |
-| SPY (2015–17) | 5 | A→D | +12% | +10% | −0.00 | 0.56 |
-| SPY (2010–17) | 22 | A→B / A→C | −89% / −294% | −1% / −31% | +0.23 / +0.69 | 0.015 / 0.022 |
-| SPY (2015–17) | 22 | A→D | −11% | −17% | −0.02 | 0.60 |
-| ES | 1 | A→B / A→C / A→D | +22% / +16% / +26% | +28% / +28% / +28% | +0.01 / +0.02 / −0.01 | 0.39 / 0.14 / 0.61 |
-| ES | 5 | A→B / A→C / A→D | +36% / +28% / +29% | +9% / +12% / +14% | −0.08 / −0.05 / −0.05 | > 0.99 |
-| ES | 22 | A→B / A→C / A→D | +21% / +9% / +1% | −5% / −9% / −10% | −0.10 / −0.06 / −0.04 | > 0.79 |
+| Target | $h$ | Step | EN gain | RF gain | DiD | $p_1$ |
+|------|----|----------|----------|----------|----------|----------|
+| SPY | 1 | A→B / A→C / A→D | −35% / −33% / −111% | +13% / +14% / +6% | +0.11 / +0.11 / +0.28 | 0.001 / 0.001 / < 0.001 |
+| SPY | 5 | A→B / A→C / A→D | +4% / −98% / −188% | +16% / +12% / −9% | +0.03 / +0.24 / +0.38 | 0.003 / < 0.001 / < 0.001 |
+| SPY | 22 | A→B / A→C / A→D | +5% / +4% / −26% | +3% / +4% / −17% | −0.01 / +0.00 / +0.03 | 0.64 / 0.46 / 0.33 |
+| ES | 1 | A→B / A→C / A→D | −56% / −49% / −7% | +7% / +11% / +15% | +0.12 / +0.12 / +0.05 | < 0.001 / < 0.001 / < 0.001 |
+| ES | 5 | A→B / A→C / A→D | −106% / −137% / +2% | +2% / −7% / +21% | +0.23 / +0.28 / +0.06 | < 0.001 / < 0.001 / 0.098 |
+| ES | 22 | A→B / A→C / A→D | −21% / −27% / −26% | −10% / −14% / +1% | +0.03 / +0.04 / +0.11 | 0.29 / 0.29 / 0.064 |
 
-**Answer on development data.** The forest is **more robust** to richer, non-stationary features than the elastic net, but it does **not extract more information** from them:
+**Answer.** On the test, **the forest gains significantly more than the elastic net from richer features at 1 and 5 days, for both targets.** The hypothesis is supported at short horizons and not at 22 days.
 
-- **The significant positive DiD values are elastic-net failures.** They occur for SPY on sets B and C, where the elastic net's QLIKE becomes two to four times worse while the forest's barely moves.
-- **Where neither model breaks down, the forest never gains significantly more.** This covers set D for SPY and every ES set. For ES at 5 and 22 days the elastic net gains clearly more; for example, from set B at 5 days the elastic net gains +36% and the forest +9%.
-- **ES at 1 day:** both models gain substantially (16–28%), the forest slightly more but not significantly.
+- **Two different mechanisms.** In most significant cases the forest improves while the elastic net gets worse, so part of the DiD is elastic-net fragility rather than extra information extracted by the forest.
+- **Clean cases.** Two comparisons do not rely on an elastic-net breakdown. For SPY at 5 days, A→B, both models gain, the forest +16% and the elastic net +4% ($p=0.003$). For ES at 1 day, A→D, the forest gains +15% while the elastic net loses 7% ($p<0.001$), so the forest uses the ES jump and semivariance block better.
+- **22 days.** Richer features help neither model, and the DiD is not significant.
 
-## 7.4 RQ3: ES target and the variance-swap check ($h=22$)
+## 8.4 RQ3: ES target and the variance-swap check ($h=22$)
 
-The table gives the mean P&L per 22-day variance-swap trade (vol-points², actual close-to-close payoff) and its $t$-statistic, for 2015–2017. $\rho$ is the correlation between the forecast signal $K-F$ and the realized payoff $K-\mathrm{realized}$.
+The table gives the mean P&L per 22-day variance-swap trade (vol-points², actual close-to-close payoff) with its $t$-statistic, and $\rho$, the correlation between the forecast signal $K-F$ and the realized payoff $K-\text{realized}$.
 
 | Strategy | SPY-target forecasts | ES-target forecasts |
 |--------------------|------------------------------------|------------------------------------|
-| Always sell variance | +80.1 ($t=4.1$) | +80.1 ($t=4.1$) |
-| Persistence | +42.7 ($t=2.0$), $\rho=0.07$ | +24.9 ($t=1.2$), $\rho=0.04$ |
-| HAR | +13.5 ($t=1.0$), $\rho=0.09$ | +24.4 ($t=1.7$), $\rho=0.27$ |
-| RF A | +28.5 ($t=1.6$), $\rho=-0.08$ | +39.8 ($t=3.5$), $\rho=0.23$ |
-| EN B | +23.8 ($t=1.8$), $\rho=-0.09$ | +40.5 ($t=1.9$), $\rho=0.42$ |
-| RF B | +35.0 ($t=1.5$), $\rho=-0.09$ | +38.9 ($t=1.8$), $\rho=0.36$ |
-| EN C | +37.4 ($t=1.9$), $\rho=0.22$ | +27.7 ($t=1.3$), $\rho=0.36$ |
-| EN D | +25.3 ($t=1.2$), $\rho=0.35$ | +21.6 ($t=1.0$), $\rho=0.31$ |
-| RF D | +21.5 ($t=1.1$), $\rho=0.37$ | +22.4 ($t=1.1$), $\rho=0.33$ |
+| Always sell variance | +70.7 ($t=1.1$) | +68.1 ($t=1.0$) |
+| Persistence | +37.5 ($t=0.6$), $\rho=-0.11$ | +24.8 ($t=0.4$), $\rho=-0.13$ |
+| HAR | +52.4 ($t=1.2$), $\rho=0.10$ | +45.6 ($t=0.8$), $\rho=0.05$ |
+| EN A | +46.1 ($t=1.1$), $\rho=0.10$ | +53.7 ($t=0.8$), $\rho=0.10$ |
+| RF A | **+85.2 ($t=2.3$), $\rho=0.28$** | +44.6 ($t=0.7$), $\rho=0.08$ |
+| EN B | +45.9 ($t=0.7$), $\rho=0.13$ | +51.6 ($t=0.8$), $\rho=0.10$ |
+| RF B | +61.4 ($t=1.6$), $\rho=0.16$ | +21.1 ($t=0.3$), $\rho=0.08$ |
+| EN C | +33.1 ($t=0.5$), $\rho=0.10$ | +57.3 ($t=0.9$), $\rho=0.09$ |
+| EN D | +52.7 ($t=0.8$), $\rho=0.12$ | +44.5 ($t=0.7$), $\rho=0.08$ |
+| RF D | +30.4 ($t=0.5$), $\rho=0.09$ | +17.9 ($t=0.3$), $\rho=0.08$ |
 
-- **Always selling variance is unbeaten** in calm 2015–2017, which had a large variance risk premium.
-- **Some profits are premium harvesting, not timing.** Persistence and the SPY-target forest make money mostly by being short (84–91% and 72–78% of the time). Their signals are uncorrelated, or negatively correlated, with the payoff.
-- **ES-target forecasts line up with the swap payoff more consistently.** Every ES model has a positive signal–payoff correlation (0.23–0.42), against −0.09 to 0.37 for SPY. HAR's rises from 0.09 on SPY to 0.27 on ES. This is directionally consistent with RQ3, but it is not yet strong evidence.
+- **Short variance paid, but noisily.** Selling variance every day earned about +70 vol-points² per trade, but the 2018, 2020 and 2025 spikes make it insignificant ($t\approx1$).
+- **Every estimated forecast times the swap in the right direction** (positive $\rho$), and Persistence does not ($\rho<0$). The success criterion's "directionally consistent" condition is therefore met for both targets.
+- **Only one timing rule is significant:** the set-A forest on the SPY target (+85.2, $t=2.3$, $\rho=0.28$), the only timing rule that beats always selling variance.
+- **RQ3 answer: not supported.** ES-target forecasts do **not** line up better with the swap payoff. Their signal–payoff correlations (0.05–0.10) are lower than the SPY-target ones (0.09–0.28). The development-period hint (Section 7.2) does not survive the test, mainly because the ES models, trained without a crisis in their history, under-forecast the 2020 spike (Figure 5).
 
-## 7.5 Regimes, extreme days and episodes
+## 8.5 Regimes, extreme days and stress episodes
 
-QLIKE ratio vs HAR on 2015–2017:
+QLIKE ratio vs HAR on the test; the best one or two forecasts per cell, plus Persistence.
 
 | Sample | SPY $h=1$ | SPY $h=22$ | ES $h=1$ | ES $h=22$ |
 |---------------------------------|------------------|------------------|------------------|------------------|
-| Calm (monthly RV ≤ 80th pct) | RF C/D 0.70; Persist. 0.94 | Persist. 0.85; EN B 0.84 | RF C 0.61; Persist. 0.93 | Persist. 0.88; ML 0.97–1.22 |
-| High RV (62 SPY / 100 ES days) | EN D 0.68; Persist. 1.15 | EN D 0.36, RF D 0.49; Persist. 1.49 | RF B 0.79; Persist. 1.08 | RF B 0.59, EN D 0.60; Persist. 1.77 |
-| Normal days (target ≤ Q3 + 1.5·IQR) | RF C 0.72 | **Persist. 0.41**; RF B 0.73 | RF C 0.71 | **Persist. 0.63**; EN B 0.91 |
-| Extreme days (target > Q3 + 1.5·IQR) | EN B 0.45, RF D 0.54 | **Persist. 2.47**; RF C 0.80, EN C 0.87 | RF B 0.35, RF D 0.37 | **Persist. 1.77**; ML 1.03–1.56 |
-| August 2015 (54 days) | ML 0.47–0.63 | EN C 0.89, RF C 0.71 | RF B/C 0.44 | RF A 0.62 |
+| Calm (monthly RV ≤ 80th pct) | RF C 0.87, RF B 0.89; Persist. 1.36 | EN C 0.98; Persist. 1.54 | RF D 0.94; Persist. 1.24 | EN A 0.96; Persist. 1.66 |
+| High RV (510 SPY / 738 ES days) | RF B 0.76, RF C 0.77; Persist. 1.15 | EN B 0.93; Persist. 1.37 | EN D 0.88; RF A 1.38 | every ML ≥ 1.13; Persist. 1.24 |
+| Extreme days (target > Q3 + 1.5·IQR) | RF C 0.51, EN B 0.53 | EN B 0.84; Persist. 1.57 | EN D 0.79, EN B 0.82; RF A 1.36 | EN B 0.97; Persist. 1.36 |
+| Feb 2018 Volmageddon | EN B/C 0.71; RF A 1.64 | every ML ≥ 1.55; Persist. 0.87 | EN B 0.58, EN C 0.64 | EN B 0.76, RF D 0.85 |
+| COVID 2020 (70 days) | RF C 0.72, EN B 0.74; **RF D 2.25** | EN B 0.81, RF A 0.85; Persist. 2.03 | **RF A–D 2.6–4.5**; Persist. 0.79 | every ML 1.19–1.72 |
+| 2022 bear market | RF C 0.66, EN B/C 0.66 | EN B 0.72 | RF B 0.68, RF C 0.70 | RF C 0.83, RF D 0.86 |
+| April 2025 tariffs | RF D 0.41, RF C 0.42 | EN D 0.52, RF D 0.58 | RF D 0.53, RF B 0.56 | EN B/C 0.82 |
 
-- **Persistence's strength is a calm-market effect.** At 22 days it beats HAR by more than half on normal days, but it is 1.8–2.5 times worse on extreme days and in high-RV regimes. In mostly calm 2015–2017, the calm days dominate the average.
-- **At 1 day, ML is *better* than HAR on extreme days** (0.35–0.54). This is the opposite of Rahimikia & Poon's single-stock finding.
-- **At 22 days, most ML models lose to HAR on extreme days,** matching their finding.
+- **At 1 day, ML beats HAR on extreme days and in stress episodes.** For SPY, the best forests halve HAR's loss on extreme days (0.51) and in April 2025 (0.41–0.42), and cut it by a third in 2022. This is the opposite of Rahimikia & Poon's single-stock finding.
+- **The COVID failure is a training-history failure.** Every model whose training window starts in 2010 (all ES models and SPY set D) never saw a crisis of 2008's size. In March 2020 these forests were 2.3–4.5 times worse than HAR. The SPY forests on sets B and C, trained from 2005 and so through the 2008 crisis, beat HAR in the same episode (0.72–0.80). A forest cannot forecast outside the range of volatility it was trained on (Section 9).
+- **Persistence is now poor everywhere except the first days of a spike,** where it reacts fastest (ES COVID 0.79, SPY Feb 2018 at 22 days 0.87).
+- **At 22 days, extreme days remain hard for everyone.** Only the elastic net on set B does slightly better than HAR (0.84 SPY, 0.97 ES).
 
-## 7.6 Economic value: volatility-targeting utility
+## 8.6 Economic value: volatility-targeting utility
 
 Realized utility (eq. 14) in % per year; the maximum is 4.00.
 
 | Target | $h$ | Persistence | HAR | Best model |
 |-------|----|------|------|---------------------------|
-| SPY | 1 | 3.46 | 3.51 | 3.66 (RF D) |
-| SPY | 5 | 3.33 | 3.47 | 3.52 (EN D) |
-| SPY | 22 | 3.33 | 3.42 | 3.46 (EN B) |
-| ES | 1 | 3.52 | 3.56 | 3.74 (RF B, C, D) |
-| ES | 5 | 3.39 | 3.41 | 3.59 (EN B) |
-| ES | 22 | 3.30 | 3.38 | 3.41 (EN B) |
+| SPY | 1 | 3.31 | 3.54 | 3.62 (RF B, RF C) |
+| SPY | 5 | 3.32 | 3.55 | 3.61 (RF B) |
+| SPY | 22 | 2.70 | 3.21 | 3.25 (EN B) |
+| ES | 1 | 3.48 | 3.61 | 3.62 (RF D) |
+| ES | 5 | 3.35 | 3.53 | 3.54 (EN D) |
+| ES | 22 | 2.40 | 3.04 | 3.05 (EN A) |
 
-- **HAR ranks above Persistence at every horizon,** because utility penalizes the large spike errors Persistence makes.
-- **The best ML model ranks above both.** Its advantage is about 0.15–0.18 percentage points per year at 1 day, 0.05–0.18 at 5 days, and 0.03–0.04 at 22 days.
+- **HAR is worth 0.1–0.6 percentage points a year more than Persistence,** most at 22 days, where Persistence's spike errors are costliest.
+- **The best ML model adds about 0.06–0.08 points a year over HAR for SPY at 1 and 5 days,** and almost nothing elsewhere. Model choice matters less than having a model at all.
 
-## 7.7 Forecast floors and fractional differencing in practice
+## 8.7 What drives the forecasts
 
-- **Floors.** The elastic net on sets B and C hits the training-minimum floor on 9–12% of SPY days at 1 day (2015–2017), and on 8–11% over 2010–2017. HAR, the elastic net on sets A and D, the forest and every ES model hit it on 2% of days or fewer. QLIKE punishes under-prediction heavily, so floored days account for most of the elastic net's losses on sets B and C.
-- **FFD inside the walk-forward:**
-  - differenced in every fold: the 10Y yield, the 10Y−3M spread and ATM 1Y implied vol ($d^*$ 0.10–0.25);
-  - differenced in two-thirds of folds: ATM 3M implied vol;
-  - differenced occasionally: CISS, ATM 1M IV, log RVX and STLFSI4.
+Averaged over the nine test re-fits:
 
-  Retained correlation is 0.96–0.999. FFD does not cure the elastic net's instability on set B, because that comes from the *stationary* but collinear implied-vol levels (Section 8).
+- **Random forest, 1 day (set D):** the VIX9D − VIX spread dominates for both targets (27%), followed by the weekly negative-return average (10–12%), ES continuous variation (8–9%) and the ES negative semivariance (8–9%).
+- **Random forest, 22 days (set D):** the implied-vol term slope leads (9–10%), followed by cross-market implied vol (log VXN) and negative-return averages.
+- **Elastic net, set D:**
+  - 1 day: the Parkinson range, the weekly negative-return average (negative), the VIX9D spread, the ES negative semivariance and the VRP, all selected in every re-fit.
+  - 22 days: the VIX3M − VIX spread has the largest coefficient (negative), followed by the 1-month IV skew and the weekly ES jump average.
+- **Conclusion on implied volatility:** as on development data, implied volatility helps mainly through the **shape** of the term structure (short-dated spread, VIX3M spread, term slope) and the skew, not through its level. Macro, stress and calendar features again rank at the bottom.
+- **HAR coefficients** are stable across re-fits (persistence $\beta_d+\beta_w+\beta_m$ = 0.88–0.92 at 1 day). After 2020 the weight moves from the monthly lag (0.19 → 0.05) to the weekly lag (0.47 → 0.56).
+- **Fractional differencing in the test re-fits:** the 10Y yield and the 10Y − 3M spread are differenced in every re-fit ($d^*$ 0.10–0.40, retained correlation 0.96–0.97), and ATM 1Y implied vol in a third of them. Every other input passes ADF undifferenced.
 
-## 7.8 What drives the forecasts
+- **Shapley values** for the last test re-fit (forest on set D, $h=22$, forecasting 2026) agree with the impurity ranking. The IV term slope leads for both targets, followed by log VXN and the monthly negative-return average. For ES, the VIX3M − VIX spread and ATM 1M implied vol are next.
+- **ALE curves** (Figure 6) are steep at low values and flat beyond the training range: the forest cannot extrapolate.
 
-- **Which part of set B does the work** (the proposal's implied-vol question).
-  - *Forest, SPY, 1 day:* the IV term slope (27%), the weekly negative-return average (13%) and daily RV (13%).
-  - *Forest, ES, 1 day:* the VIX9D−VIX spread (23%) and daily RV (20%).
-  - *Forest, 22 days:* the IV term slope, skew and cross-market implied vols lead.
-  - *Elastic net:* at 1 day, its set-B coefficients load on the Parkinson range and the term slope. At 22 days they are large and offsetting on ATM implied vol (1M +0.48, 3M −0.31), the signature of collinearity.
-  - **Conclusion: implied volatility does help, mainly through its shape (term slope, short-dated spread, skew) rather than its level.**
-- **Set D, random forest:**
-  - SPY, 1 day: ES continuous variation (9%), IV skew (7%), weekly negative returns (7%), VIX9D spread (7%).
-  - ES, 1 day: VIX9D spread (23%), ES negative semivariance (10%), realized kernel (8%).
-- **Set D, elastic net** (selected in every fold):
-  - 1 day: the Parkinson range, VIX9D spread, ES negative semivariance, VRP, realized kernel and (negatively) the daily negative return.
-  - 22 days: news sentiment (negative), IV skew, the monthly RV lag and the term slope.
-- **Macro and calendar features rank at the bottom** for both models (ADS, EPU, GPR, Hang Seng, calendar flags). This echoes Kılıç (2026).
-- **Shapley values** for the last-fold forest (2017, $h=22$, set D) spread importance thinly:
-  - SPY: NFCI, the weekly RV lag and the Parkinson range;
-  - ES: ATM 3M and 1Y implied vol, the Parkinson range and CISS.
-- **ALE curves** (Figure 6) are steep at low values and flat above: the forest cannot extrapolate.
+![*Figure 6.* Accumulated local effects of the six most important features, random forest on set D, SPY target, $h=22$ (2026 re-fit).](figures/ale_test_SPY_h22_D_2026.png){width=80%}
 
-![*Figure 6.* Accumulated local effects of the six most important features, random forest on set D, SPY target, $h=22$ (2017 fold).](figures/ale_SPY_h22_D_2017.png){width=80%}
+## 8.8 Memory in forecast errors
 
-## 7.9 Memory in forecast errors
+The table gives the local Whittle $\hat d$ of the 1-day forecast errors over the test at two bandwidths (s.e. 0.07 and 0.04) and the Ljung–Box $Q(10)$ test.
 
-The table gives the local Whittle $\hat d$ ($m=T^{0.65}$, s.e. 0.05) and the Ljung–Box $Q(10)$ p-value for the 1-day forecast errors, 2015–2017.
+| Target | Forecast | $\hat d$, $m=T^{0.5}$ | $\hat d$, $m=T^{0.65}$ | Ljung–Box $p$ |
+|------|----------------------|------------------|------------------|------------------|
+| SPY | Persistence / HAR | −0.49 / −0.37 | −0.49 / −0.08 | < 0.001 |
+| SPY | EN B–D / RF A–D | −0.13 to 0.12 | 0.06 to 0.43 | < 0.001 |
+| ES | Persistence / HAR | −0.49 / −0.17 | −0.48 / 0.15 | < 0.001 |
+| ES | EN B–D / RF A–D | 0.03 to 0.14 | 0.40 to 0.46 | < 0.001 |
 
-| Target | Forecast | $\hat d$ of errors | Ljung–Box $p$ |
-|------|----------------------|------------------|------------------|
-| SPY | Persistence / HAR | −0.49 / −0.33 | < 0.001 / 0.001 |
-| SPY | RF A–D | −0.08 to −0.37 | ≤ 0.014 |
-| SPY | EN B, C, D | −0.06 to 0.03 | 0.56, 0.31, 0.25 (white) |
-| ES | Persistence / HAR | −0.49 / 0.02 | < 0.001 |
-| ES | EN B–D, RF A–D | −0.15 to 0.10 | ≤ 0.003 (EN D: 0.15) |
+- **On development data no forecast left long memory in its errors** (every $\hat d\le0.10$; Section 4.3).
+- **On the test, the ML errors carry low-frequency persistence.** At the wider bandwidth their $\hat d$ is 0.06–0.46, against −0.08 (SPY) and 0.15 (ES) for HAR. The ML models' errors stay on one side for long stretches, most visibly the ES and set-D forests after the 2020 shift in the volatility level. Short-range dependence (Ljung–Box) is present for every forecast.
+- **Interpretation.** A level shift such as 2020 creates spurious long memory in a short sample, so these estimates are a symptom of the regime problem in Section 8.5 rather than evidence of unmodelled fractional integration. HAR, whose weights adapt smoothly, absorbs the shift best on this measure. Bhatti's $d_{\mathrm{LTM}}$ was unstable on these error series and is not reported.
 
-- **No forecast leaves long memory in its errors.** Every $\hat d\le0.10$, and the autocorrelation tails are noise: tail $R^2<0.06$, against Bhatti's 0.6 threshold.
-- **Short-range dependence remains,** as a negative first-order autocorrelation (Figure 2, right). After a volatility spike, the next forecast is too high. This is the measurement-error effect HARQ was designed for (Bollerslev, Patton & Quaedvlieg, 2016), and that set D's $\sqrt{\mathrm{RQ}}\times\mathrm{RV}$ targets.
-- **Persistence errors are strongly anti-persistent** ($\hat d\approx-0.5$), as expected when forecasting with a single noisy day.
+## 8.9 Robustness on the test
 
-## 7.10 Robustness
-
-Each check reruns the walk-forward with one change. The table gives QLIKE ratios against that scenario's own HAR, on 2015–2017 unless stated. **Bold** = significantly better than HAR; ✓ = in the MCS; † = significantly better than Persistence.
+Each check reruns the frozen walk-forward on the test with one change. The table gives the best one or two QLIKE ratios against that scenario's own HAR, plus Persistence (same notation as Section 8.1).
 
 | Check (scenario) | $h=1$ | $h=5$ | $h=22$ |
 |-------------------------------|----------------------|----------------------|----------------------|
-| Rolling window, SPY (10 years) | RF C **0.68** ✓†, RF D **0.69** ✓† | EN D **0.84** ✓, RF D **0.88** ✓ | best RF A 0.86 ✓; Persistence 0.81 |
-| Rolling window, ES (8 years) | RF C/D **0.63** ✓† | EN D **0.72** ✓, EN C **0.73** ✓ | none below 0.97 |
-| SPY target = Risk Lab 15-min RV | RF D **0.70** ✓†, RF C **0.73** † | EN D / RF D **0.88** ✓ | EN C **0.87** ✓; Persistence 0.77 |
-| SPY target = Risk Lab QMLE | RF C/D **0.70** ✓†, EN D **0.75** ✓† | EN D **0.84** ✓, RF D **0.85** ✓ | best 0.87 (n.s.); Persistence 0.76 |
-| ES target = 1-min RV | RF D **0.66** ✓†, RF C **0.72** ✓† | EN C/D **0.72** ✓ | none below 0.98 |
-| ES target = realized kernel | RF D **0.70** ✓†, RF C **0.71** ✓† | EN D **0.72** ✓, RF D **0.75** ✓ | none below 0.97 |
-| ES holiday rows dropped | RF D **0.62** ✓†, RF C **0.64** ✓† | EN D **0.72** ✓, EN C **0.73** ✓ | best RF A 0.92 (n.s.) |
-| Random forest with untuned defaults | SPY RF D **0.68** ✓†; ES RF D **0.60** ✓† | SPY RF D 0.95 ✓; ES RF D **0.76** ✓ | ES RF A **0.84** ✓; sets C/D 1.31–1.46 |
-| FFD-lag variant (ML lag block = FFD log RV) | SPY RF C **0.68** ✓†; ES RF B/C **0.64** ✓†; EN on FFD lags alone 1.34–2.08 | SPY RF B **0.86** ✓†; ES EN B **0.68** ✓ | ES EN B **0.91** ✓; otherwise ≥ 0.94 |
-| Oxford-Man jump features, SPY 2010–2017 ($n=2{,}013$) | RF C+OM **0.77** ✓† vs RF C **0.78** ✓† | RF C+OM **0.90** ✓† vs RF C 0.97 | 1.21 vs 1.27 |
-| 1996 start, HAR lags + log VIX (2001–2017, $n=4{,}276$) | RF A **0.84** ✓†, RF A+VIX **0.84** ✓† | RF A+VIX **0.81** ✓; Persistence **0.83** ✓ | EN A+VIX **0.82** ✓, RF A+VIX **0.87** ✓; Persistence 0.86 |
+| Main design, SPY | RF C **0.85** ✓†, RF B **0.86** ✓† | RF B **0.88** ✓†; Persist. 1.37 | EN B 0.97 ✓; Persist. 1.51 |
+| Main design, ES | RF D 0.97 ✓† | EN D 0.98 ✓† | EN A 1.00 ✓†; Persist. 1.56 |
+| Rolling window, SPY (10 years) | RF C 0.93 ✓†, RF D 0.95 ✓† | EN D 0.90 ✓† | EN A 0.99 ✓ |
+| Rolling window, ES (8 years) | RF D 0.95 ✓†, RF C 0.95 ✓† | EN A 1.00 ✓† | EN A 1.03 ✓† |
+| SPY target = Risk Lab 15-min RV | RF C **0.84** ✓†, RF D **0.90** ✓† | RF C **0.89** ✓† | EN C 0.98 ✓ |
+| SPY target = Risk Lab QMLE | RF C **0.85** ✓†, RF A **0.92** ✓† | RF C 0.99 ✓† | EN C 0.99 ✓ |
+| Strict missing-day rule, SPY ($n$ = 1,650 / 1,580 / 1,318) | RF C **0.83** ✓†, EN D **0.91** ✓† | RF C **0.90** ✓† | EN C 0.97 ✓ |
+| ES target = 1-min RV | RF D 1.00 ✓† | EN A 1.01 ✓† | EN A 0.99 ✓† |
+| ES target = realized kernel | RF D 0.96 ✓†, RF C 0.97 ✓† | EN A 1.00 ✓† | EN A 1.00 ✓† |
+| ES holiday rows dropped | RF D 0.96 ✓† | EN A 1.00 ✓† | EN A 1.00 ✓† |
+| Random forest with untuned defaults | SPY RF C **0.87** ✓†; ES RF D **0.91** ✓† | SPY RF C 0.94 ✓†; ES ≥ 1.14 | SPY ≥ 1.08; ES ≥ 1.14 |
+| FFD-lag variant (ML lag block = FFD log RV) | SPY RF CL **0.84** ✓†; ES RF CL 0.97 ✓† | SPY RF BL **0.88** ✓†, RF CL **0.89** ✓† | SPY EN BL 0.97 ✓; ES ≥ 1.13 |
+| Oxford-Man jump features, SPY 2018–2021 ($n\approx970$) | RF C+OM **0.87** ✓† vs RF C **0.92** ✓† | RF C 0.97 ✓† | EN C 0.99 ✓ |
+| 1996 start, HAR lags + log VIX | RF A+VIX **0.89** ✓†, RF A **0.93**† | RF A+VIX **0.90** ✓† | EN A+VIX 1.00 ✓ |
 
 What the checks show:
 
-- **The 1-day result is robust.** In every scenario the best forest beats both HAR and Persistence, at ratios of 0.60–0.84. This holds across alternative targets (15-min RV, QMLE, 1-min RV, realized kernel), windows, holiday treatment, untuned forests and FFD lags.
-- **At 5 days, set-D models beat HAR in every scenario that runs them** (the untuned SPY forest, 0.95, is the one exception). Only the SPY FFD-lag and Oxford-Man variants also beat Persistence.
-- **At 22 days no robustness check produces a forecast that beats Persistence.** Persistence itself often has lower QLIKE than HAR (0.76–0.94).
-- **Persistence vs HAR over the long 2001–2017 window** (1996-start check): Persistence significantly beats HAR at 5 days (0.83). HAR on variance levels, fitted by least squares, is a weak QLIKE forecaster at medium horizons.
-- **FFD lags.** The forest is indifferent to whether its lag block is raw RV or FFD log RV. The elastic net is not: on FFD log RV alone it is much worse than HAR, because a linear model in a log-scale input cannot reproduce a level-scale target. Keeping the raw HAR lags, as the proposal specifies, matters for the linear model.
-- **Smaller checks.** Untuned forests match tuned ones at 1 and 5 days but are worse at 22 days on the large sets. Oxford-Man jump features add a little at 5 days for SPY. Dropping ES holiday rows changes nothing material.
+- **The SPY short-horizon result is robust where the training history includes 2008.** The 1-day forest gain over HAR (0.83–0.89) survives the alternative SPY targets (15-min RV, QMLE), the strict missing-day rule, untuned forests, FFD lags and the 1996 start. At 5 days it survives 15-min RV, the strict rule, FFD lags and the 1996 start.
+- **It weakens with a rolling window.** A 10-year rolling window drops 2008 from SPY training after the 2018 re-fit, and the 1-day forest gain shrinks to 0.93, no longer significant. This is the same training-history effect as the COVID failure (Section 8.5).
+- **ES: no check produces a significant gain over HAR, with one exception.** The untuned forest on set D (0.91 at 1 day) does, which suggests that the tuned ES forests were over-fitted to calm validation years. The alternative ES targets, the holiday-row treatment and the rolling window change nothing material.
+- **22 days: no check produces a forecast that beats HAR.** Persistence is 1.3–1.7 times worse than HAR in every scenario.
+- **The strict missing-day rule** removes about a quarter of SPY origins but leaves the conclusions unchanged, so the frozen 80%/20% rules are not driving the results.
+- **FFD lags:** the forest is again indifferent to raw or FFD lags, while the elastic net on FFD log RV alone is 1.1–2.0 times worse than HAR. Keeping the raw HAR lags matters for the linear model.
 
-## 7.11 Success-criterion scorecard (development data)
+## 8.10 Success-criterion scorecard
 
 | Target | $h$ | Best ML | Ratio vs HAR | $p$ vs HAR | In MCS | Beats HAR | Ratio vs Persist. | Beats Persist. | Swap timing (P&L, $\rho$) |
 |----|----|------|------|------|----|----|------|----|----------------|
-| SPY | 1 | RF C | 0.709 | < 0.001 | yes | **yes** | 0.745 | **yes** | — |
-| SPY | 5 | EN D | 0.885 | 0.003 | yes | **yes** | 0.821 | no | — |
-| SPY | 22 | EN B | 0.854 | 0.036 | yes | **yes** | 0.966 | no | +23.8, $\rho=-0.09$ (not consistent) |
-| ES | 1 | RF C | 0.628 | < 0.001 | yes | **yes** | 0.666 | **yes** | — |
-| ES | 5 | EN B | 0.657 | < 0.001 | yes | **yes** | 0.734 | **yes** | — |
-| ES | 22 | EN B | 0.943 | 0.10 | yes | no | 1.001 | no | +40.5, $\rho=0.42$ (consistent) |
+| SPY | 1 | RF C | 0.846 | < 0.001 | yes | **yes** | 0.646 | **yes** | — |
+| SPY | 5 | RF B | 0.883 | 0.006 | yes | **yes** | 0.646 | **yes** | — |
+| SPY | 22 | EN B | 0.971 | 0.33 | yes | no | 0.644 | no | +45.9, $\rho=0.13$ (consistent) |
+| ES | 1 | RF D | 0.968 | 0.30 | yes | no | 0.800 | **yes** | — |
+| ES | 5 | EN D | 0.984 | 0.41 | yes | no | 0.755 | **yes** | — |
+| ES | 22 | EN A | 1.000 | 0.50 | yes | no | 0.641 | **yes** | +53.7, $\rho=0.10$ (consistent) |
 
-- **On development data the success criterion is met.** ML beats HAR significantly, with the winner in the MCS, at five of six target–horizon pairs, and the ES variance-swap check is directionally consistent.
-- **Against the Persistence floor, far less is informative.** Only the 1-day forests (both targets) and the 5-day elastic net on ES set B pass. At 22 days, and at 5 days for SPY, no forecast (HAR included) significantly beats naive Persistence on 2015–2017.
-- **The locked test will be far more decisive** than this calm three-year window: it covers nine years and the 2018, 2020, 2022 and 2025 stress episodes.
+- **The success criterion is met.** The random forest has statistically lower QLIKE than HAR at two horizons (SPY 1 and 5 days), the MCS includes it, and the variance-swap check is directionally consistent for both targets.
+- **The success is narrow.** It holds for the main SPY target at short horizons and on market-feature sets only. It fails for ES and at 22 days, where HAR remains the forecast to beat, consistent with Kılıç (2026).
+- **Informative forecasts.** Against the Persistence floor, HAR and the set-A elastic net are informative at every horizon for both targets. The forecasts that fail to beat Persistence are models on the richer sets B–D, above all at 22 days, and the ES set-A forest at 1 and 5 days.
 
-# 8. Discussion and Relation to the Literature
+## 8.11 Development versus test
+
+| Finding | Development (2015–2017) | Locked test (2018–2026) |
+|---|---|---|
+| 1-day ML gain over HAR | Large for both targets (forest 0.61–0.81) | SPY only (forest 0.85); ES none |
+| Set-A forest vs HAR | Beats HAR at 1 day | Does not beat HAR |
+| HAR vs Persistence | Not significantly better | Significantly better at every horizon |
+| RQ2 (forest gains more) | Only where the elastic net breaks | Yes at 1 and 5 days, partly through elastic-net fragility |
+| RQ3 (ES aligns better with swaps) | Directionally yes | No |
+| Gains grow with the horizon | No | No |
+
+The pattern is consistent with a calm development window that flattered both the forests (which interpolate well inside a familiar range) and Persistence (which is excellent when nothing moves). Nine test years with four stress episodes reward HAR's smooth weighting of the past and punish models trained on too narrow a range of volatility.
+
+# 9. Discussion and Relation to the Literature
 
 The project folder holds the three reference papers and the long-memory working paper cited in Section 4.3.
 
@@ -688,105 +721,90 @@ The project folder holds the three reference papers and the long-memory working 
 | Rahimikia & Poon (2026), SSRN 3707796 | 23 NASDAQ stocks with order-book and news data, 2007–2022, 1 day; HAR family (CHAR) vs LSTM | ML loses overall, wins on normal days, loses badly on extreme days (RV > Q3 + 1.5·IQR) | Extreme-day split; floor-frequency reporting |
 | Bhatti (2026), Fordham working paper | Long memory in S&P 500 constituent log prices; finite-sample detectability boundary | $d_0(T)=5.81T^{-0.367}$; ADF passes after one difference while KPSS keeps rejecting under long memory | ADF and KPSS read together; $d_{\mathrm{LTM}}$ cross-check with its caveats (Section 4.3) |
 
-**Against Christensen et al.** They find large 22-day gains under MSE; we find none that survive the Persistence floor under QLIKE. Our set-D MSE ratios at 22 days for SPY (0.71–0.72) are close to theirs, but not significant over three years. Two design differences matter: they forecast individual stocks and refit daily, while we forecast an index and refit annually.
+**With Christensen et al. on set A.** As they find, with volatility history alone the machine-learning models do no better than HAR. Unlike them, we find no gains that grow with the horizon. Under MSE our 22-day SPY ratios with covariates (0.86–0.92) are in their range but not significant over nine years of a single index; they forecast 29 stocks and refit daily.
 
-**With Kılıç.** As he finds, ML gains are concentrated at short horizons, and extended macro predictors add little.
+**Closest to Kılıç.** Our test results match his conclusion on the S&P 500: ML gains are concentrated at short horizons, they are modest, and extended macro predictors add nothing. Our 1-day SPY gain (12–15% QLIKE) is larger than his (about 1%), which we attribute to the implied-vol term-structure features he does not use. They are the forest's most important inputs.
 
-**Against Rahimikia & Poon.** At 1 day our models do *better* than HAR on extreme days. Index RV is smoother than single-stock RV, and our models see the IV term structure and ES semivariances. At 22 days, though, the extreme-day loss reappears.
+**Against Rahimikia & Poon.** At 1 day our forests do much *better* than HAR on extreme days (0.51 for SPY). Index RV is smoother than single-stock RV, and our models see the implied-vol term structure, which moves before realized volatility. At 22 days extreme days stay hard for every model.
 
-**Why the elastic net breaks down on sets B and C.**
+**Why the forests failed in 2020, and why that matters.** A tree forecasts the average of the training targets in a leaf, so its forecasts are bounded by the training range. The ES models and SPY set D can only be trained from 2010, when the ES data begin, so through 2019 they had never seen volatility like March 2020. Their 1-day QLIKE in COVID was 2.3–4.5 times HAR's. The SPY forests trained from 2005 had the 2008 crisis in their history and did well. A practical lesson for anyone deploying tree-based volatility models: the training window must contain at least one crisis, or the forecasts must be blended with a model that can extrapolate.
+
+**Why the elastic net breaks down on some sets.**
 
 1. Validation sometimes picks an almost-zero penalty.
 2. The near-OLS fit then puts large, offsetting coefficients on the collinear implied-vol block (VIX, ATM 1M/3M/1Y IV, VRP).
 3. These inputs mostly pass the ADF test, so FFD leaves them unchanged.
-4. When they move one to two standard deviations away from their training range, the linear forecast falls below zero and is floored.
+4. When they move one to two standard deviations outside their training range, the linear forecast falls below zero and is floored, or overshoots.
 
-Set D is unaffected because the ES realized kernel carries most of the signal. Possible remedies would change the specification and must be decided before the test:
+The team kept the proposal's specification rather than add a guard after seeing the development results. Possible remedies (a floor on $\lambda$, an unpenalized HAR block as in Kılıç, or trimming the implied-vol block) are left for exploratory work.
 
-- a floor on $\lambda$;
-- an unpenalized HAR block, as in Kılıç;
-- trimming the implied-vol block.
+**Why Persistence looked strong in development and weak in the test.** In a persistently calm regime the latest realized variance is an excellent forecast. Over 2018–2026, with frequent spikes and fast mean reversion, its errors on the days after a spike dominate, and it loses to HAR by 21–56%.
 
-**Why the forest cannot forecast outside its range.** A tree forecasts the average of the training targets in a leaf, which bounds forecasts by the training range. This is visible in 2017 (Figure 5). An earlier configuration with a three-year burn-in (proposal v5.2) exposed the reverse case. Trained only on 2005–2007, the forest's QLIKE in the 2008–2009 crisis was about six times HAR's. The five-year burn-in of v5.4 starts development forecasts in 2010, after the crisis has entered training.
+# 10. Applications
 
-**Why Persistence is strong on 2015–2017.** In a persistently calm regime, the latest realized variance is an excellent forecast, while HAR's monthly lag and intercept pull forecasts toward the higher training average. Persistence loses badly whenever volatility jumps (Section 7.5). Utility punishes those errors, which is why it ranks HAR above Persistence.
+- **Volatility and variance trading.** A forecast of realized variance against $\mathrm{VIX}^2$ indicates when implied volatility is rich or cheap. On the test, the timing signal is directionally right for every estimated model, but significantly profitable only for the SPY-target set-A forest; the evidence for systematic swap timing is weak.
+- **Volatility targeting and risk budgeting.** A fund that scales exposure by $1/\hat\sigma$ gains 0.1–0.6 percentage points a year from using HAR instead of Persistence, and a further 0.06–0.08 points from the 1- and 5-day SPY forests.
+- **Risk limits and margining.** One-day forecasts feed value-at-risk limits and initial-margin models. That is the horizon where the ML gains are largest, and the forests' advantage on extreme days is what such systems need. The COVID failure shows the forests should be trained on a window that includes a crisis, or combined with HAR.
+- **A reusable evaluation harness.** Any new volatility model can be dropped into `models/walk_forward.m` and judged against HAR and Persistence under the same rules: label gap, train-only stationarity transforms, tuning protocol, DM and MCS tests, regimes and economic checks.
 
-# 9. Applications
-
-- **Volatility and variance trading.** A forecast of realized variance against $\mathrm{VIX}^2$ indicates when implied volatility is rich or cheap. The ES results suggest full-session targets suit this better.
-- **Volatility targeting and risk budgeting.** The utility results quantify what better forecasts are worth to a fund that scales exposure by $1/\hat\sigma$: about 0.15 percentage points per year at the 1-day horizon.
-- **Risk limits and margining.** One-day forecasts feed value-at-risk limits and initial-margin models. That is the horizon where the ML gains are largest and clear both benchmarks.
-- **A reusable evaluation harness.** Any new volatility model can be dropped into `walk_forward.m` and judged against HAR and Persistence under the same rules: label gap, train-only stationarity transforms, tuning protocol, DM and MCS tests, regimes and economic checks.
-
-# 10. Risks, Limitations and Open Decisions
+# 11. Risks, Limitations and Decisions
 
 | Risk (proposal Section 7) | Mitigation in the implementation | Status |
 |--------------------------|------------------------------------------|----------|
 | Look-ahead bias | Publication-lag table; real-time ADS; label gap; train-only standardization, imputation, floors and $d^*$; locked test | In place |
-| Overfitting a flexible model | Nested sets; DM and MCS; design frozen before the test; exploratory label for later ideas | In place |
-| ES session and sample | SPY remains the main target; Oxford-Man pre-2010 check; holiday-row robustness | In place |
+| Overfitting a flexible model | Nested sets; DM and MCS; design frozen at tag `design-freeze` before the test; later ideas labelled exploratory | In place |
+| ES session and sample | SPY remains the main target; Oxford-Man pre-2010 check; holiday-row robustness | In place; the short ES history proved the main weakness (Section 8.5) |
 | Over-differencing or look-ahead in choosing $d$ | Smallest $d$ passing ADF, re-chosen inside each training window; retained correlation reported (0.96–0.999); raw HAR lags kept; FFD-lag variant as robustness | In place |
-| Missing SPY days in test | Targets never imputed; counts measured (Section 3.2); ES models scored on those days | Treatment to be decided |
+| Missing SPY days in test | Targets never imputed; rules frozen before the test; strict-rule robustness; ES models scored on those days | Done |
 | Overnight mismatch | ES secondary target for the swap payoff; SPY forecasts rescaled in that check only | In place |
 | Scope for one semester | Three models plus two unestimated benchmarks | In place |
 
+**Decisions taken before the test** (Section 7.3): the four missing-day rules; ES holiday rows rolled into the next session; the elastic net left as specified; the forest's tuning budget unchanged; VIX3M added to set B as the proposal lists. No setting was changed after the test was run.
+
 **Limitations.**
 
-1. **Development results only.** The locked test has not been run.
-2. **A short, calm comparison window.** The all-model window is 2015–2017: 755 days, with only 60–100 high-RV days.
-3. **Levels-scale modelling** causes both the forest's extrapolation problem and the elastic net's floor problem.
-4. **A narrow benchmark set.** The benchmarks are plain HAR and Persistence. Richer econometric models (ARFIMA, CHAR, regime-switching HAR) might erase the ML gains, so our conclusions are "relative to HAR and Persistence".
+1. **One test, one index.** Nine years of one index give limited power: many ratios of 0.90–0.97 are not significant, and the MCS rarely excludes HAR.
+2. **Levels-scale modelling** causes both the forest's extrapolation problem and the elastic net's floor and overshoot problems.
+3. **A narrow benchmark set.** The benchmarks are plain HAR and Persistence. Richer econometric models (ARFIMA, CHAR, regime-switching HAR) might erase the remaining ML gains, so our conclusions are "relative to HAR and Persistence".
+4. **Short ES history.** ES and set D start in 2010, so their training windows contain no crisis before 2020.
 5. **Tuning noise.** Twelve Bayesian-optimization steps with one seed make the forest's hyperparameters noisy across years.
-6. **Data gaps.** There are no limit-order-book or news-text data; ES session times are inferred; and pre-December-2008 ADS is the revised vintage (training rows only).
+6. **Data gaps.** There are no limit-order-book or news-text data; ES session times are inferred; pre-December-2008 ADS is the revised vintage (training rows only).
 7. **A stylized variance-swap check.** VIX² only approximates the strike; there are no costs; trades overlap.
 8. **Many tests.** Read individual p-values together with the MCS.
 9. **Hand-coded tests.** ADF and KPSS are coded directly rather than taken from the Econometrics Toolbox. They reproduce the textbook behaviour on simulated white noise and random walks.
-10. **An early look at two benchmarks on the test period.** An earlier version of Aryan's independent HAR script also scored HAR and Persistence on 2018–2026 (20 October 2026). Neither benchmark has tuning parameters, and no design choice in this report uses those numbers. The integrated script now follows the same test lock as the main pipeline, and its committed outputs cover development years only. We disclose this so the locked test can be read with it in mind.
+10. **An earlier look at two benchmarks.** Before the team adopted a single pipeline, a standalone HAR script also scored HAR and Persistence on 2018–2026 (20 October 2026). Neither benchmark has tuning parameters, and no design choice used those numbers.
 
-**Decisions to take before unlocking the test.**
+**Exploratory next steps** (outside the frozen design): an elastic net with an unpenalized HAR block or a $\lambda$ floor; forests on log RV, or forests combined with HAR; a training window that adds pre-2010 Oxford-Man jump measures to the ES models; the optional boosting run.
 
-1. **Missing-day treatment** (proposal 3.2, explicitly open). Confirm or replace the provisional rules:
-   - the 20% rule for multi-day targets;
-   - the 80% rule for weekly and monthly lags;
-   - dropping origins with a missing $\mathrm{RV}_t$ (33 test origins at $h=1$; 531 have a missing day somewhere in the 22-day lag window);
-   - last-published values for inputs on market holidays.
-2. **ES holiday sessions** (proposal 3.2): obtain the professor's confirmation of rolling them into the next NYSE day.
-3. **Elastic-net stability:** keep the proposal's specification, or add a guard (Section 8).
-4. **Random-forest tuning budget:** more `bayesopt` steps, or averaged seeds.
-5. **Optional boosting run** on the winning feature set.
-6. **Freeze and run:** tag the code version, set `cfg.runLockedTest = true`, run `./run_parallel.sh test` once, and archive the outputs.
-
-# 11. Implementation Plan and Code
+# 12. Implementation and Code
 
 Work proceeded in thin slices, so that each phase left a runnable pipeline:
 
 1. Persistence and HAR on set A, end to end;
 2. the elastic net and random forest;
-3. richer feature sets.
+3. richer feature sets;
+4. the development evaluation, the design freeze and the locked test.
 
-All code is in `Code/` (MATLAB R2026a with the Statistics and Machine Learning Toolbox; neither the Parallel Computing nor the Econometrics Toolbox is needed).
+All code is one MATLAB pipeline in `Code/` (MATLAB R2026a with the Statistics and Machine Learning Toolbox; neither the Parallel Computing nor the Econometrics Toolbox is needed). Its folders follow the stages of Figure 1, and every target, feature, model and table comes from the same code path.
 
-| Task (proposal Section 8) | Implementation |
+| Stage (proposal Section 8 task) | Implementation |
 |--------------------------|--------------------------------------------------------------|
-| Targets, Persistence and HAR lags | `load_panel.m` (NYSE-calendar alignment), `build_design.m` (targets, features, publication lags), `fit_persistence.m`, `fit_har.m` |
-| Stationarity and FFD | `adf_test.m`, `kpss_test.m`, `ffd.m`, `ffd_choose.m` (coded directly); `stationarity.m` (diagnostics); $d^*$ per fold in `walk_forward.m` |
-| Elastic net | `fit_en.m` (`lasso` with Alpha, plus closed-form ridge) |
-| Random forest | `fit_rf.m` (`TreeBagger`, `bayesopt`) |
-| Walk-forward and jobs | `walk_forward.m`, `run_job.m`, `make_spec.m` (main and robustness scenarios), `rv_config.m` (every setting and the test lock) |
-| Evaluation and explanation | `evaluate_phase.m`, `qlike.m`, `dm_test.m`, `mcs.m`; `explain_rf.m` (Shapley, ALE); `long_memory.m`; `data_audit.m` |
-| Drivers and report | `run_parallel.sh`, `main.m`; `report_figures.m`, `Report/build_report.py` |
-| Team modules and integration check | `Code/Robin/` (Robin: targets, aligned features, feature sets A–D as standalone files); `aryan/code/rv_har_pipeline.m` (Aryan: independent HAR vs Persistence with its own rules); `Code/check_integration.m` |
-
-**Integration check (21 October 2026).** Robin's standalone data preparation reproduces the main pipeline's 46 features and three targets to within $10^{-14}$ for both targets. Aryan's independent HAR and Persistence forecasts have correlations of 0.999–1.000 with the main pipeline's on development data, and their HAR/Persistence QLIKE ratios differ by at most 0.01, even though his script uses its own missing-day, holiday and floor rules.
+| Data: targets, alignment and publication lags | `data/load_panel.m` (NYSE-calendar alignment), `data/build_design.m` (targets, feature sets, publication lags, sources), `data/export_design.m` (modelling dataset and feature dictionary), `data/data_audit.m` (missing-day counts, target cross-check) |
+| Stationarity and FFD | `stationarity/adf_test.m`, `kpss_test.m`, `ffd.m`, `ffd_choose.m` (coded directly); `stationarity.m` (diagnostics); `long_memory.m`; $d^*$ per fold in `models/walk_forward.m` |
+| Persistence and HAR | `models/fit_persistence.m`, `models/fit_har.m` |
+| Elastic net | `models/fit_en.m` (`lasso` with Alpha, plus closed-form ridge) |
+| Random forest | `models/fit_rf.m` (`TreeBagger`, `bayesopt`) |
+| Walk-forward and scenarios | `models/walk_forward.m`, `run_job.m`, `data/make_spec.m` (main and robustness scenarios), `rv_config.m` (every setting and the test lock) |
+| Evaluation and explanation | `evaluation/evaluate_phase.m`, `qlike.m`, `dm_test.m`, `mcs.m`; `evaluation/explain_rf.m` (Shapley, ALE) |
+| Drivers and report | `run_parallel.sh`, `main.m`; `evaluation/report_figures.m`, `Report/build_report.py` |
 
 **How to run.**
 
-- `./run_parallel.sh dev` regenerates the main development results (about 15 minutes on a 14-core Mac).
-- `./run_parallel.sh dev robustness` runs all ten robustness scenarios (about 45 minutes).
-- `python3 Report/build_report.py` rebuilds this document.
-- The locked test runs only after `cfg.runLockedTest = true` is set.
+- `Code/run_parallel.sh dev all` regenerates every development result: the main design and the eleven robustness scenarios (about 35 minutes on a 14-core Mac).
+- `Code/run_parallel.sh test all` runs the locked test with `cfg.runLockedTest = true` (about 45 minutes).
+- `python3 Report/build_report.py` rebuilds this document as `.docx` and `.pdf`.
 
-**Implementation choices the proposal leaves open** (all in `rv_config.m`, `build_design.m` or `walk_forward.m`):
+**Implementation choices the proposal leaves open** (all in `rv_config.m`, `data/build_design.m` or `models/walk_forward.m`):
 
 | Choice | Setting |
 |---|---|
@@ -798,15 +816,15 @@ All code is in `Code/` (MATLAB R2026a with the Statistics and Machine Learning T
 | Calendar flags | Next-session early close; days to the next session |
 | DM bandwidth | $\max(\lceil1.5h\rceil,4(T/100)^{2/9})$ |
 | MCS bootstrap | Block length $\max(h,\lfloor\sqrt T\rfloor)$; 5,000 draws |
-| High-RV threshold | 80th percentile of the monthly RV lag |
+| High-RV threshold | 80th percentile of the monthly RV lag over 2005–2017 |
 | SPY rescaling in the swap check | Training ratio of close-to-close variance to RV |
 
-| Team member | Lead responsibility | Focus |
+| Team member | Lead responsibility | Pipeline stage |
 |------------|--------------------------------------------------------|----------|
-| Robin | Risk Lab and VOLARE ES targets, feature alignment and publication lags, data dictionary, QC | Data |
-| James | Persistence and HAR; walk-forward engine; DM tests and Model Confidence Set | RQ1 benchmarks |
-| Aryan | Elastic net and random forest, tuning, coefficients and feature importance | RQ1–RQ2 ML |
-| All | Volatility-timing utility, variance-swap comparison, report and presentation | RQ3 / write-up |
+| Robin | Risk Lab and VOLARE ES targets, feature alignment and publication lags, data dictionary, QC | `Code/data/` |
+| James | Persistence and HAR; walk-forward engine; DM tests and Model Confidence Set | `Code/models/` (benchmarks, walk-forward), `Code/evaluation/` |
+| Aryan | Elastic net and random forest, tuning, coefficients and feature importance | `Code/models/` (EN, RF), `Code/evaluation/explain_rf.m` |
+| All | Stationarity, volatility-timing utility, variance-swap comparison, report and presentation | `Code/stationarity/`, `Report/` |
 
 **Calendar.**
 
@@ -814,9 +832,9 @@ All code is in `Code/` (MATLAB R2026a with the Statistics and Machine Learning T
 |---|---|
 | Data lock (mid-October) | Done |
 | Persistence, HAR and first ML baseline (end-October) | Done |
-| Full sets A–D and ES runs (mid-November) | Done on development data |
-| Locked test (late November) | Pending the decisions above |
-| Economic checks, final report and slides (through early December) | Report drafted on development data |
+| Full sets A–D and ES runs (mid-November) | Done |
+| Design freeze and locked test | Done (21 October 2026) |
+| Economic checks, final report and slides (through early December) | Report done; slides to follow |
 
 # References
 
@@ -878,7 +896,7 @@ Data sources: Dacheng Xiu, Risk Lab (research use); VOLARE (volare.unime.it), ES
 
 # Appendix A. Feature Dictionary
 
-All variances are in daily %². "Lag" is the publication shift in trading days. "FFD" says whether the input is a fractional-differencing candidate; every input is one except the raw HAR lags and the calendar flags. On development data, only the unit-root inputs marked † are actually differenced in most folds.
+All variances are in daily %². The full list with first dates and missing counts is written by `data/export_design.m` to `Output/data/feature_dictionary.csv`. "Lag" is the publication shift in trading days. "FFD" says whether the input is a fractional-differencing candidate; every input is one except the raw HAR lags and the calendar flags. On development data, only the unit-root inputs marked † are actually differenced in most folds.
 
 | Feature | Set | Definition | Source | Lag | FFD |
 |------------------|----|----------------------------------------|----------------|------|------|
@@ -889,7 +907,7 @@ All variances are in daily %². "Lag" is the publication shift in trading days. 
 | `iv_atm_1m`, `iv_atm_3m`, `iv_atm_1y` | B | At-the-money implied vol, vol points | Bloomberg | 0 | 3M†, 1Y† |
 | `iv_skew_1m`, `iv_term` | B | IV(90%) − IV(110%) at 1 month; ATM IV(1Y) − IV(1M) | Bloomberg | 0 | candidate |
 | `t10y3m`, `dgs10` | B | 10Y − 3M Treasury spread; 10Y yield | FRED | 0 | both† |
-| `vvix`, `skew`, `vix9d_spread` | B | VVIX; Cboe SKEW; VIX9D − VIX | Cboe | 0 | candidate |
+| `vvix`, `skew`, `vix9d_spread`, `vix3m_spread` | B | VVIX; Cboe SKEW; VIX9D − VIX; VIX3M − VIX | Cboe | 0 | candidate |
 | `log_vxn`, `log_rvx` | B | Log Nasdaq-100 and Russell 2000 implied vol | Cboe / FRED | 0 | candidate |
 | `ads` | C | ADS business conditions, real-time vintage | Philadelphia Fed | built in | candidate |
 | `log_epu` | C | Log daily Economic Policy Uncertainty | Baker–Bloom–Davis | 1 | candidate |
@@ -914,21 +932,20 @@ All variances are in daily %². "Lag" is the publication shift in trading days. 
 
 Status key:
 
-- **Done:** implemented and run on development data.
-- **Pending:** implemented, but waiting for the locked test or for a decision the proposal leaves open.
+- **Done:** implemented and run on the development period and the locked test.
 - **Optional:** allowed by the proposal, not done.
 
 | Proposal item (section) | Status | Where |
 |----------------------------------------------|----------|------------------------------|
 | Three models plus Persistence and VIX² benchmarks (Abstract, §1, §4.4) | Done | `fit_persistence.m`, `fit_har.m`, `fit_en.m`, `fit_rf.m`, `evaluate_phase.m` |
-| Four nested sets; HAR and Persistence on A; ML on A–D (§4.2, §4.4) | Done | `build_design.m`, `set_columns.m`, `run_job.m` |
+| Four nested sets; HAR and Persistence on A; ML on A–D (§4.2, §4.4) | Done (set B includes VIX3M) | `data/build_design.m`, `data/set_columns.m`, `run_job.m` |
 | Horizons 1, 5, 22; target = average RV over $t{+}1{:}t{+}h$ (§4.1) | Done | `build_design.m` |
-| Main target SPY rv5 from 2005; ES second target and set D from 2010 (§3.1) | Done | `sample_start.m` |
-| NYSE calendar alignment; weekly series held to next release (§3.2) | Done (calendar from `features_daily.csv`; the named calendar file is not in the data folder) | `load_panel.m` |
+| Main target SPY rv5 from 2005; ES second target and set D from 2010 (§3.1) | Done; Risk Lab vs Oxford-Man correlation 0.968 reproduced | `data/sample_start.m`, `data/data_audit.m` |
+| NYSE calendar alignment; weekly series held to next release (§3.2) | Done (calendar from `features_daily.csv`; the named calendar file is not in the data folder) | `data/load_panel.m` |
 | Late starts from first date + $\ell_\tau$; common days only (§3.2) | Done | `ffd.m`, `walk_forward.m`, `evaluate_phase.m` |
 | Missing-day counts measured (§3.2) | Done (reproduced exactly) | `data_audit.m` |
-| Missing-day treatment (§3.2: "will be decided") | Pending (provisional rules in place) | `rv_config.m`, `build_design.m` |
-| ES holiday rows rolled forward; dropping as robustness (§3.2) | Done / Pending professor's confirmation | `load_panel.m`; scenario `holdrop` |
+| Missing-day treatment (§3.2: "will be decided") | Done (rules frozen before the test; strict-rule robustness) | `rv_config.m`, `data/build_design.m`; scenario `strict` |
+| ES holiday rows rolled forward; dropping as robustness (§3.2) | Done | `data/load_panel.m`; scenario `holdrop` |
 | Linear forecasts floored at the training-window minimum RV (§4.1) | Done | `fit_har.m`, `fit_en.m` |
 | ADF and KPSS on every target and input, levels and logs, development sample only (§4.3) | Done (coded directly; Econometrics Toolbox not installed) | `adf_test.m`, `kpss_test.m`, `stationarity.m` |
 | Local Whittle and Bhatti's detectability-boundary estimator for RV memory (§4.3) | Done | `long_memory.m` |
@@ -943,34 +960,38 @@ Status key:
 | Tuning on the last two years; label gap (eq. 10) (§5) | Done | `walk_forward.m` |
 | Availability timing and publication shifts (§5) | Done | `build_design.m` |
 | Rolling 10-year (8-year ES) robustness (§5) | Done | scenario `rolling` |
-| Locked 2018–2026 test examined once (§5) | Pending (early benchmark look disclosed, Section 10) | `cfg.runLockedTest = false` |
+| Locked 2018–2026 test examined once (§5) | Done, after the `design-freeze` tag (early benchmark look disclosed, Section 11) | `cfg.runLockedTest`; Section 8 |
 | MSE, QLIKE, MAE, OOS $R^2$ on the same origins (§6) | Done | `loss_*.csv` |
 | DM (Newey–West + HLN) against HAR and Persistence; MCS at 10% over Persistence, HAR, EN, RF (§6) | Done | `dm_test.m`, `mcs.m`, `loss_*.csv`, `rq1_*.csv` |
 | Loss ratios vs HAR and vs Persistence; RQ2 difference-in-differences (§6) | Done | `loss_ratios_vs_HAR.csv`, `rq2_*.csv` |
-| Calm vs high-RV regimes; stress episodes (§6) | Done / Pending (test episodes run with the test) | `regimes_*.csv` |
+| Calm vs high-RV regimes; stress episodes (§6) | Done (Feb 2018, 2020, 2022, Apr 2025) | `regimes_*.csv` |
 | Vol-targeting utility; variance-swap P&L vs VIX² (§6) | Done | `utility_*.csv`, `varswap_*_h22.csv` |
 | Robustness: rolling; Risk Lab 15-min and QMLE; ES rv1, kernel, holiday drop; Oxford-Man; 1996 VIX-only (§6) | Done | scenarios `rolling`, `rv15`, `qmle`, `rv1`, `rk`, `holdrop`, `oxford`, `vix1996` |
-| Success criterion, with Persistence as the floor (§6) | Done | `success_criterion.csv`, Section 7.11 |
+| Success criterion, with Persistence as the floor (§6) | Done (met; Section 8.10) | `success_criterion.csv` |
 | Shapley and ALE (§8) | Done | `explain_rf.m` |
 | Code regenerates every table from the cleaned inputs (§8) | Done | `run_parallel.sh` |
-| Final report (§8) | Done (development) | this report |
+| Final report (§8) | Done | this report |
 | Slides (§8) | Optional (after the test) | — |
 | Additions from the research papers | Done | Extreme-day split (Rahimikia & Poon); RF-defaults robustness and floor reporting (Christensen et al.); MCS block length and euro-crisis window (Kılıç) |
 
 # Appendix C. Output Files
 
+`<phase>` is `dev` (development) or `test` (locked test); `<scenario>` is `main` or a robustness scenario.
+
 | Location | Contents |
 |--------------------------------|------------------------------------------------------------|
 | `Output/panel.mat` | The aligned daily panel (all inputs on the NYSE calendar) |
-| `Output/forecasts/dev/<scenario>/<target>_h<h>.mat` | Every forecast, with per-fold hyperparameters, kept features, coefficients, importances and FFD orders |
-| `Output/tables/dev/<scenario>/summary.md` | All tables for a scenario in one readable file |
-| `.../loss_*.csv`, `loss_noD_*.csv` | Accuracy, DM against HAR and Persistence, MCS; sets A–C on the longer SPY sample |
+| `Output/data/design_SPY.csv`, `design_ES.csv`, `feature_dictionary.csv` | The modelling dataset (targets and features A–D per origin) and the feature dictionary |
+| `Output/forecasts/<phase>/<scenario>/<target>_h<h>.mat` | Every forecast, with per-fold hyperparameters, kept features, coefficients, importances and FFD orders |
+| `Output/tables/<phase>/<scenario>/summary.md` | All tables for a scenario in one readable file |
+| `.../loss_*.csv`, `loss_noD_*.csv` | Accuracy, DM against HAR and Persistence, MCS; sets A–C on the longer SPY development sample |
 | `.../rq1_*.csv`, `rq2_*.csv` | RQ1 pairwise tests (Persistence, HAR, EN, RF); RQ2 difference-in-differences |
 | `.../regimes_*.csv`, `utility_*.csv`, `varswap_*_h22.csv` | Regimes and episodes; vol-targeting utility; variance swap |
-| `.../explain_*.csv`, `shap_*.csv`, `ale_*.png`, `ffd_*.csv` | EN coefficients and RF importance; Shapley values; ALE plots; FFD orders per input |
-| `.../stationarity.csv`, `long_memory_*.csv`, `long_memory_acf.png` | ADF/KPSS diagnostics with development $d^*$; long-memory estimates |
+| `.../explain_*.csv`, `har_coefficients_*.csv`, `ffd_*.csv` | EN coefficients and RF importance; HAR coefficients per re-fit; FFD orders per input |
+| `.../shap_*.csv`, `ale_*.png` | Shapley values and ALE plots for the last-fold forest |
+| `.../stationarity.csv`, `long_memory_*.csv`, `long_memory_acf.png` | ADF/KPSS diagnostics with development $d^*$; long-memory estimates and memory in forecast errors |
 | `.../success_criterion.csv`, `loss_ratios_vs_HAR.csv` | Success scorecard (with Persistence floor); every loss ratio in one table |
-| `Output/tables/audit_*.csv` | Missing-data counts and the test-origin table of proposal 3.2 |
+| `Output/tables/audit_*.csv` | Missing-data counts, the test-origin table of proposal 3.2 and the Risk Lab vs Oxford-Man cross-check |
 | `Output/logs/` | One log per MATLAB job |
 
 # Appendix D. Glossary

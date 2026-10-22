@@ -1,0 +1,8 @@
+[test oxford SPY h=22] PER_A  2018-2026   2127 forecasts     0.1s
+[test oxford SPY h=22] HAR_A  2018-2026   2127 forecasts     0.1s
+[test oxford SPY h=22] EN_A   2018-2026   2127 forecasts     0.2s
+[test oxford SPY h=22] RF_A   2018-2026   2127 forecasts    46.9s
+[test oxford SPY h=22] EN_C   2018-2026   2127 forecasts     0.9s
+[test oxford SPY h=22] RF_C   2018-2026   2127 forecasts   137.9s
+[test oxford SPY h=22] EN_COM 2018-2021    978 forecasts     0.4s
+[test oxford SPY h=22] RF_COM 2018-2021    978 forecasts    51.9s

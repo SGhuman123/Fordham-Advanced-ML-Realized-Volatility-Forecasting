@@ -1,6 +1,6 @@
 [dev vix1996 SPY h=22] PER_A  2001-2017   4276 forecasts     0.2s
 [dev vix1996 SPY h=22] HAR_A  2001-2017   4276 forecasts     0.1s
 [dev vix1996 SPY h=22] EN_A   2001-2017   4276 forecasts     0.3s
-[dev vix1996 SPY h=22] RF_A   2001-2017   4276 forecasts    48.2s
+[dev vix1996 SPY h=22] RF_A   2001-2017   4276 forecasts    54.1s
 [dev vix1996 SPY h=22] EN_AV  2001-2017   4276 forecasts     0.2s
-[dev vix1996 SPY h=22] RF_AV  2001-2017   4276 forecasts    52.9s
+[dev vix1996 SPY h=22] RF_AV  2001-2017   4276 forecasts    58.2s

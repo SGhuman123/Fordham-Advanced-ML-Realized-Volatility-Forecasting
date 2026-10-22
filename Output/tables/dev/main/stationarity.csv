@@ -35,6 +35,7 @@ vvix,set B,log,2954,-8.65014925543923,1,2.55707597488846,1,persistent (long memo
 skew,set B,level,3272,-5.70220089144721,1,14.2590628583254,1,persistent (long memory),0,0.999999999999999
 skew,set B,log,3272,-5.62862582626548,1,14.1994077774184,1,persistent (long memory),NaN,NaN
 vix9d_spread,set B,level,1760,-10.2779900987784,1,1.13612785781537,1,persistent (long memory),0,1
+vix3m_spread,set B,level,2086,-7.41317529171793,1,0.519254338524968,1,persistent (long memory),0,0.999999999999998
 log_vxn,set B,level,3272,-3.69190047839569,1,6.94173587224831,1,persistent (long memory),0,1
 log_rvx,set B,level,3272,-3.2112016196507,1,7.49537597533064,1,persistent (long memory),0,1
 ads,set C,level,3272,-4.58643314253719,1,4.24294106252269,1,persistent (long memory),0,0.999999999999999

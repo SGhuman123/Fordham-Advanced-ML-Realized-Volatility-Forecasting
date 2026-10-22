@@ -1,0 +1,8 @@
+[test holdrop ES h=5] PER_A  2018-2026   2193 forecasts     0.1s
+[test holdrop ES h=5] HAR_A  2018-2026   2193 forecasts     0.1s
+[test holdrop ES h=5] EN_A   2018-2026   2193 forecasts     0.3s
+[test holdrop ES h=5] RF_A   2018-2026   2193 forecasts    35.3s
+[test holdrop ES h=5] EN_C   2018-2026   2193 forecasts     0.8s
+[test holdrop ES h=5] RF_C   2018-2026   2193 forecasts   117.4s
+[test holdrop ES h=5] EN_D   2018-2026   2193 forecasts     0.6s
+[test holdrop ES h=5] RF_D   2018-2026   2193 forecasts   136.2s

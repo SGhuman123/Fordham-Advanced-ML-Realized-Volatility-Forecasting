@@ -14,7 +14,7 @@ steps = {'1. Targets', 'Risk Lab SPY rv5 (main); VOLARE ES rv5 (second); h = 1, 
          '2. Features: sets A-D', 'HAR lags \rightarrow + market \rightarrow + macro/stress \rightarrow + ES; NYSE calendar', 'Publication lags; ADF/KPSS; FFD if needed';
          '3. Benchmark and three models', 'Persistence and HAR on set A; elastic net and random forest on sets A-D', 'ML models nest HAR (raw lags kept)';
          '4. Walk-forward', 'Re-fit after each year-end; expanding window; label gap of h days', 'Tune on the last two years; d* per window';
-         '5. Locked test: evaluate', '2018 - Oct 2026: QLIKE / MSE vs HAR and Persistence; DM, MCS; swap check', 'Development now; test run once';
+         '5. Locked test: evaluate', '2018 - Oct 2026: QLIKE / MSE vs HAR and Persistence; DM, MCS; swap check', 'Design frozen first; test run once';
          '6. Explain and diagnose', 'Coefficients, importance, Shapley, ALE; long memory; stationarity', 'Which inputs do the work'};
 n = size(steps, 1);
 fig = figure('Visible', 'off', 'Position', [100 100 1000 760], 'Color', 'w');

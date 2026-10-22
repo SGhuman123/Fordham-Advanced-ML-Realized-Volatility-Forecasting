@@ -1,0 +1,95 @@
+target,feature,group,source,shift_sessions,first_date,n_missing_from_start,in_A,in_B,in_C,in_D
+SPY,rv_d,A,"Risk Lab SPY rv5",0,03-Jan-2005,33,1,1,1,1
+SPY,rv_w,A,"Risk Lab SPY rv5",0,03-Jan-2005,12,1,1,1,1
+SPY,rv_m,A,"Risk Lab SPY rv5",0,03-Jan-2005,19,1,1,1,1
+SPY,negret_d,B,"features_daily spx_logret_cc_pct",0,03-Jan-2005,0,0,1,1,1
+SPY,negret_w,B,"features_daily spx_logret_cc_pct",0,03-Jan-2005,0,0,1,1,1
+SPY,negret_m,B,"features_daily spx_logret_cc_pct",0,03-Jan-2005,0,0,1,1,1
+SPY,parkinson_d,B,"features_daily spx_parkinson_var_daily",0,03-Jan-2005,0,0,1,1,1
+SPY,parkinson_w,B,"features_daily spx_parkinson_var_daily",0,03-Jan-2005,0,0,1,1,1
+SPY,log_vix,B,"Cboe VIX",0,03-Jan-2005,0,0,1,1,1
+SPY,vrp,B,"Cboe VIX; target RV",0,03-Jan-2005,19,0,1,1,1
+SPY,iv_atm_1m,B,"Bloomberg iv_surface",0,03-Jan-2005,0,0,1,1,1
+SPY,iv_atm_3m,B,"Bloomberg iv_surface",0,03-Jan-2005,0,0,1,1,1
+SPY,iv_atm_1y,B,"Bloomberg iv_surface",0,03-Jan-2005,0,0,1,1,1
+SPY,iv_skew_1m,B,"Bloomberg iv_surface",0,03-Jan-2005,0,0,1,1,1
+SPY,iv_term,B,"Bloomberg iv_surface",0,03-Jan-2005,0,0,1,1,1
+SPY,t10y3m,B,"FRED T10Y3M",0,03-Jan-2005,0,0,1,1,1
+SPY,dgs10,B,"FRED DGS10",0,03-Jan-2005,0,0,1,1,1
+SPY,vvix,B,"Cboe VVIX",0,06-Mar-2006,318,0,1,1,1
+SPY,skew,B,"Cboe SKEW",0,03-Jan-2005,0,0,1,1,1
+SPY,vix9d_spread,B,"Cboe VIX9D, VIX",0,04-Jan-2011,1512,0,1,1,1
+SPY,vix3m_spread,B,"Cboe VIX3M, VIX",0,18-Sep-2009,1186,0,1,1,1
+SPY,log_vxn,B,"Cboe/FRED VXN",0,03-Jan-2005,0,0,1,1,1
+SPY,log_rvx,B,"Cboe RVX",0,03-Jan-2005,0,0,1,1,1
+SPY,ads,C,"Philadelphia Fed ADS (real-time vintage)",0,03-Jan-2005,0,0,0,1,1
+SPY,log_epu,C,"Baker-Bloom-Davis EPU",1,03-Jan-2005,0,0,0,1,1
+SPY,ciss,C,"ECB CISS (US)",2,03-Jan-2005,0,0,0,1,1
+SPY,news_sent,C,"SF Fed news sentiment",5,03-Jan-2005,0,0,0,1,1
+SPY,log_gpr,C,"Caldara-Iacoviello classic GPR",5,03-Jan-2005,0,0,0,1,1
+SPY,nfci,C,"Chicago Fed NFCI (release date)",0,03-Jan-2005,0,0,0,1,1
+SPY,stlfsi4,C,"St. Louis Fed STLFSI4 (release date)",0,03-Jan-2005,0,0,0,1,1
+SPY,hsi_sq,C,"Yahoo Hang Seng",0,03-Jan-2005,0,0,0,1,1
+SPY,early_close_next,C,"NYSE calendar",0,03-Jan-2005,0,0,0,1,1
+SPY,gap_days_next,C,"NYSE calendar",0,03-Jan-2005,0,0,0,1,1
+SPY,es_C_d,D,"VOLARE ES",0,30-Sep-2009,1197,0,0,0,1
+SPY,es_C_w,D,"VOLARE ES",0,05-Oct-2009,1199,0,0,0,1
+SPY,es_C_m,D,"VOLARE ES",0,23-Oct-2009,1211,0,0,0,1
+SPY,es_J_d,D,"VOLARE ES",0,30-Sep-2009,1197,0,0,0,1
+SPY,es_J_w,D,"VOLARE ES",0,05-Oct-2009,1199,0,0,0,1
+SPY,es_J_m,D,"VOLARE ES",0,23-Oct-2009,1211,0,0,0,1
+SPY,es_rsp_d,D,"VOLARE ES",0,30-Sep-2009,1197,0,0,0,1
+SPY,es_rsn_d,D,"VOLARE ES",0,30-Sep-2009,1197,0,0,0,1
+SPY,es_rsp_w,D,"VOLARE ES",0,05-Oct-2009,1199,0,0,0,1
+SPY,es_rsn_w,D,"VOLARE ES",0,05-Oct-2009,1199,0,0,0,1
+SPY,es_sqrtrq_rv,D,"VOLARE ES",0,30-Sep-2009,1197,0,0,0,1
+SPY,es_rk_d,D,"VOLARE ES",0,30-Sep-2009,1197,0,0,0,1
+SPY,overnight_d,D,"VOLARE ES rv5; Risk Lab SPY rv5",0,30-Sep-2009,1230,0,0,0,1
+SPY,overnight_w,D,"VOLARE ES rv5; Risk Lab SPY rv5",0,02-Oct-2009,1203,0,0,0,1
+ES,rv_d,A,"VOLARE ES rv5",0,04-Jan-2010,0,1,1,1,1
+ES,rv_w,A,"VOLARE ES rv5",0,04-Jan-2010,0,1,1,1,1
+ES,rv_m,A,"VOLARE ES rv5",0,04-Jan-2010,0,1,1,1,1
+ES,negret_d,B,"features_daily spx_logret_cc_pct",0,04-Jan-2010,0,0,1,1,1
+ES,negret_w,B,"features_daily spx_logret_cc_pct",0,04-Jan-2010,0,0,1,1,1
+ES,negret_m,B,"features_daily spx_logret_cc_pct",0,04-Jan-2010,0,0,1,1,1
+ES,parkinson_d,B,"features_daily spx_parkinson_var_daily",0,04-Jan-2010,0,0,1,1,1
+ES,parkinson_w,B,"features_daily spx_parkinson_var_daily",0,04-Jan-2010,0,0,1,1,1
+ES,log_vix,B,"Cboe VIX",0,04-Jan-2010,0,0,1,1,1
+ES,vrp,B,"Cboe VIX; target RV",0,04-Jan-2010,0,0,1,1,1
+ES,iv_atm_1m,B,"Bloomberg iv_surface",0,04-Jan-2010,0,0,1,1,1
+ES,iv_atm_3m,B,"Bloomberg iv_surface",0,04-Jan-2010,0,0,1,1,1
+ES,iv_atm_1y,B,"Bloomberg iv_surface",0,04-Jan-2010,0,0,1,1,1
+ES,iv_skew_1m,B,"Bloomberg iv_surface",0,04-Jan-2010,0,0,1,1,1
+ES,iv_term,B,"Bloomberg iv_surface",0,04-Jan-2010,0,0,1,1,1
+ES,t10y3m,B,"FRED T10Y3M",0,04-Jan-2010,0,0,1,1,1
+ES,dgs10,B,"FRED DGS10",0,04-Jan-2010,0,0,1,1,1
+ES,vvix,B,"Cboe VVIX",0,04-Jan-2010,0,0,1,1,1
+ES,skew,B,"Cboe SKEW",0,04-Jan-2010,0,0,1,1,1
+ES,vix9d_spread,B,"Cboe VIX9D, VIX",0,04-Jan-2011,253,0,1,1,1
+ES,vix3m_spread,B,"Cboe VIX3M, VIX",0,04-Jan-2010,0,0,1,1,1
+ES,log_vxn,B,"Cboe/FRED VXN",0,04-Jan-2010,0,0,1,1,1
+ES,log_rvx,B,"Cboe RVX",0,04-Jan-2010,0,0,1,1,1
+ES,ads,C,"Philadelphia Fed ADS (real-time vintage)",0,04-Jan-2010,0,0,0,1,1
+ES,log_epu,C,"Baker-Bloom-Davis EPU",1,04-Jan-2010,0,0,0,1,1
+ES,ciss,C,"ECB CISS (US)",2,04-Jan-2010,0,0,0,1,1
+ES,news_sent,C,"SF Fed news sentiment",5,04-Jan-2010,0,0,0,1,1
+ES,log_gpr,C,"Caldara-Iacoviello classic GPR",5,04-Jan-2010,0,0,0,1,1
+ES,nfci,C,"Chicago Fed NFCI (release date)",0,04-Jan-2010,0,0,0,1,1
+ES,stlfsi4,C,"St. Louis Fed STLFSI4 (release date)",0,04-Jan-2010,0,0,0,1,1
+ES,hsi_sq,C,"Yahoo Hang Seng",0,04-Jan-2010,0,0,0,1,1
+ES,early_close_next,C,"NYSE calendar",0,04-Jan-2010,0,0,0,1,1
+ES,gap_days_next,C,"NYSE calendar",0,04-Jan-2010,0,0,0,1,1
+ES,es_C_d,D,"VOLARE ES",0,04-Jan-2010,0,0,0,0,1
+ES,es_C_w,D,"VOLARE ES",0,04-Jan-2010,0,0,0,0,1
+ES,es_C_m,D,"VOLARE ES",0,04-Jan-2010,0,0,0,0,1
+ES,es_J_d,D,"VOLARE ES",0,04-Jan-2010,0,0,0,0,1
+ES,es_J_w,D,"VOLARE ES",0,04-Jan-2010,0,0,0,0,1
+ES,es_J_m,D,"VOLARE ES",0,04-Jan-2010,0,0,0,0,1
+ES,es_rsp_d,D,"VOLARE ES",0,04-Jan-2010,0,0,0,0,1
+ES,es_rsn_d,D,"VOLARE ES",0,04-Jan-2010,0,0,0,0,1
+ES,es_rsp_w,D,"VOLARE ES",0,04-Jan-2010,0,0,0,0,1
+ES,es_rsn_w,D,"VOLARE ES",0,04-Jan-2010,0,0,0,0,1
+ES,es_sqrtrq_rv,D,"VOLARE ES",0,04-Jan-2010,0,0,0,0,1
+ES,es_rk_d,D,"VOLARE ES",0,04-Jan-2010,0,0,0,0,1
+ES,overnight_d,D,"VOLARE ES rv5; Risk Lab SPY rv5",0,04-Jan-2010,33,0,0,0,1
+ES,overnight_w,D,"VOLARE ES rv5; Risk Lab SPY rv5",0,04-Jan-2010,5,0,0,0,1

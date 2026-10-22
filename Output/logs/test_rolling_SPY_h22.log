@@ -1,0 +1,8 @@
+[test rolling SPY h=22] PER_A  2018-2026   2127 forecasts     0.1s
+[test rolling SPY h=22] HAR_A  2018-2026   2127 forecasts     0.1s
+[test rolling SPY h=22] EN_A   2018-2026   2127 forecasts     0.2s
+[test rolling SPY h=22] RF_A   2018-2026   2127 forecasts    26.9s
+[test rolling SPY h=22] EN_C   2018-2026   2127 forecasts     0.7s
+[test rolling SPY h=22] RF_C   2018-2026   2127 forecasts    77.1s
+[test rolling SPY h=22] EN_D   2018-2026   2127 forecasts     0.8s
+[test rolling SPY h=22] RF_D   2018-2026   2127 forecasts   100.5s

@@ -1,7 +1,7 @@
 explain_rf: wrote shap_SPY_h22_D_2017.csv and ale_SPY_h22_D_2017.png
 explain_rf: wrote shap_ES_h22_D_2017.csv and ale_ES_h22_D_2017.png
 long_memory: wrote long_memory_series.csv, long_memory_errors.csv, long_memory_acf.png
-stationarity: 73 tests written to stationarity.csv
+stationarity: 74 tests written to stationarity.csv
     NYSE_sessions_2005_to_5Oct2026    RiskLab_missing    missing_in_development    missing_in_test
     ______________________________    _______________    ______________________    _______________
 
@@ -24,4 +24,12 @@ stationarity: 73 tests written to stationarity.csv
      5        2196                     143                           12                            527              
     22        2179                     532                           19                            510              
 
-data_audit: wrote audit_*.csv to /Users/a65911/Desktop/Fordham/Sem 3 syllabus/Advanced ML/Projects/Forecasting S&P 500 Realized Volatility/Output/tables
+    common_days_2005_2022    corr_variance    corr_log_variance    median_ratio_RiskLab_over_OM
+    _____________________    _____________    _________________    ____________________________
+
+            4293                0.9676             0.9604                    0.96775           
+
+data_audit: wrote audit_*.csv to /Users/a65911/Desktop/Fordham/Sem 3 syllabus/Advanced ML/Projects/Fordham-Advanced-ML-Realized-Volatility-Forecasting/Output/tables
+export_design: SPY, 5473 origins, 47 features
+export_design: ES, 4211 origins, 47 features
+export_design: wrote /Users/a65911/Desktop/Fordham/Sem 3 syllabus/Advanced ML/Projects/Fordham-Advanced-ML-Realized-Volatility-Forecasting/Output/data

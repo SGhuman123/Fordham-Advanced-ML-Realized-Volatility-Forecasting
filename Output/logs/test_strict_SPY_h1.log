@@ -1,0 +1,8 @@
+[test strict SPY h=1] PER_A  2018-2026   1669 forecasts     0.1s
+[test strict SPY h=1] HAR_A  2018-2026   1669 forecasts     0.1s
+[test strict SPY h=1] EN_A   2018-2026   1669 forecasts     0.3s
+[test strict SPY h=1] RF_A   2018-2026   1669 forecasts    52.3s
+[test strict SPY h=1] EN_C   2018-2026   1669 forecasts     0.8s
+[test strict SPY h=1] RF_C   2018-2026   1669 forecasts   257.5s
+[test strict SPY h=1] EN_D   2018-2026   1669 forecasts     1.1s
+[test strict SPY h=1] RF_D   2018-2026   1669 forecasts   239.1s

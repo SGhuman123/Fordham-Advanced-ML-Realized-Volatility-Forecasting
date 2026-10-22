@@ -1,0 +1,8 @@
+[test qmle SPY h=22] PER_A  2018-2026   2127 forecasts     0.1s
+[test qmle SPY h=22] HAR_A  2018-2026   2127 forecasts     0.1s
+[test qmle SPY h=22] EN_A   2018-2026   2127 forecasts     0.3s
+[test qmle SPY h=22] RF_A   2018-2026   2127 forecasts   500.0s
+[test qmle SPY h=22] EN_C   2018-2026   2127 forecasts     0.9s
+[test qmle SPY h=22] RF_C   2018-2026   2127 forecasts   173.9s
+[test qmle SPY h=22] EN_D   2018-2026   2127 forecasts     0.8s
+[test qmle SPY h=22] RF_D   2018-2026   2127 forecasts   109.9s

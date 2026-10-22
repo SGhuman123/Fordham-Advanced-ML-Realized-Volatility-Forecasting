@@ -12,8 +12,8 @@ same code path, and the folders follow the stages of the proposal's Figure 1.
 ## Running it
 
 ```sh
-./run_parallel.sh dev all      # development: main design + every robustness scenario (~1 h on 14 cores)
-./run_parallel.sh test all     # locked test: the same, on 2018 - Oct 2026 (needs cfg.runLockedTest = true)
+./run_parallel.sh dev all      # development: main design + every robustness scenario (~35 min on 14 cores)
+./run_parallel.sh test all     # locked test: the same, on 2018 - Oct 2026 (needs cfg.runLockedTest = true; ~45 min)
 ./run_parallel.sh dev main     # main design only; any scenario name works in place of main
 ```
 or, inside MATLAB, `main` (serial: the same steps for the development period, slower).

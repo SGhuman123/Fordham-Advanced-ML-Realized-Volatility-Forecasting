@@ -1,10 +1,10 @@
 [dev main ES h=22] PER_A  2015-2017    755 forecasts     0.1s
-[dev main ES h=22] HAR_A  2015-2017    755 forecasts     0.0s
-[dev main ES h=22] EN_A   2015-2017    755 forecasts     0.2s
-[dev main ES h=22] RF_A   2015-2017    755 forecasts    10.1s
+[dev main ES h=22] HAR_A  2015-2017    755 forecasts     0.1s
+[dev main ES h=22] EN_A   2015-2017    755 forecasts     0.6s
+[dev main ES h=22] RF_A   2015-2017    755 forecasts    10.4s
 [dev main ES h=22] EN_B   2015-2017    755 forecasts     0.4s
-[dev main ES h=22] RF_B   2015-2017    755 forecasts     7.5s
-[dev main ES h=22] EN_C   2015-2017    755 forecasts     0.2s
-[dev main ES h=22] RF_C   2015-2017    755 forecasts    10.1s
+[dev main ES h=22] RF_B   2015-2017    755 forecasts     8.5s
+[dev main ES h=22] EN_C   2015-2017    755 forecasts     0.3s
+[dev main ES h=22] RF_C   2015-2017    755 forecasts    11.0s
 [dev main ES h=22] EN_D   2015-2017    755 forecasts     0.3s
-[dev main ES h=22] RF_D   2015-2017    755 forecasts     9.8s
+[dev main ES h=22] RF_D   2015-2017    755 forecasts    16.8s

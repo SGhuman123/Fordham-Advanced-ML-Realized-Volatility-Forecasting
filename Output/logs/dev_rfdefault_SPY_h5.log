@@ -1,5 +1,5 @@
 [dev rfdefault SPY h=5] PER_A  2010-2017   2013 forecasts     0.1s
 [dev rfdefault SPY h=5] HAR_A  2010-2017   2013 forecasts     0.1s
-[dev rfdefault SPY h=5] RF_A   2010-2017   2013 forecasts     7.2s
-[dev rfdefault SPY h=5] RF_C   2010-2017   2013 forecasts    32.4s
-[dev rfdefault SPY h=5] RF_D   2015-2017    755 forecasts    10.7s
+[dev rfdefault SPY h=5] RF_A   2010-2017   2013 forecasts     6.4s
+[dev rfdefault SPY h=5] RF_C   2010-2017   2013 forecasts    38.9s
+[dev rfdefault SPY h=5] RF_D   2015-2017    755 forecasts    14.4s

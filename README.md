@@ -1,72 +1,64 @@
 # Forecasting S&P 500 Realized Volatility
 
-This project compares HAR, elastic net, and random-forest forecasts of S&P 500 realized variance. It studies 1-, 5-, and 22-trading-day horizons using SPY realized variance and E-mini S&P 500 (ES) realized variance, with nested market, macro/stress, and futures-feature sets.
+Fordham MSQF · Advanced Machine Learning (QFGB-890H-001) · Fall 2026 · Team: James, Robin and Aryan
 
-The implementation uses an annual walk-forward evaluation. Models are tuned on the last two years of each training window, and forecasts are assessed primarily with QLIKE, alongside MSE, MAE, out-of-sample $R^2$, Diebold-Mariano tests, and Model Confidence Sets. The project also evaluates robustness scenarios and includes stationarity, fractional-differencing, long-memory, and data-quality analyses.
+This project compares HAR, elastic net and random-forest forecasts of S&P 500 realized variance at 1-, 5- and 22-trading-day horizons. It uses SPY realized variance (Risk Lab, main target) and E-mini S&P 500 futures realized variance (VOLARE ES, second target), with four nested feature sets: A, the HAR lags; B, adding market and implied-vol inputs; C, adding macro/stress inputs; and D, adding ES jump and semivariance measures. Naive Persistence and the VIX² variance-swap strike are the benchmarks. It implements [proposal v5.4](Realize%20Volatility%20Data/RV_Forecasting_Proposal_v5.4.pdf) in full.
 
-## Project status
+The design is an annual expanding-window walk-forward, with tuning on the last two years of each training window. Inputs are checked with ADF/KPSS tests and fractionally differenced inside each window where needed. The primary loss is QLIKE, alongside MSE, MAE and out-of-sample R². Significance comes from Diebold–Mariano tests and the Model Confidence Set, plus regime, utility and variance-swap checks and eleven robustness scenarios.
 
-The checked-in report describes development-period results through 2017. The 2018–2026 test period is intentionally locked and has not been run. Do not unlock it until the team has frozen and agreed on all design choices; the guard is `cfg.runLockedTest` in [`Code/rv_config.m`](Code/rv_config.m).
+## Status and headline results
 
-**Disclosure.** An earlier version of Aryan's standalone HAR script (on the `Aryan-dev` branch, 20 Oct 2026) also scored HAR and the Persistence benchmark on the 2018–2026 test period. Neither model has tuning parameters, and no design choice has been based on those numbers. In the integrated code the script respects the same `cfg.runLockedTest` lock, and its committed outputs contain development years only. The report records this in Section 10.
+The design was frozen on the development period (2005–2017; git tag `design-freeze`), and the **locked 2018 – October 2026 test was then run once**, as the proposal prescribes. The full write-up is [Report/RV_Forecasting_Report.pdf](Report/RV_Forecasting_Report.pdf) (also `.docx`; source `.md`).
+
+On the locked test:
+
+- **SPY, 1 and 5 days:** the random forest on market features cuts QLIKE by 12–15% against HAR. The gain is significant, and the forest stays in the Model Confidence Set, so the proposal's success criterion is met.
+- **SPY, 22 days, and every ES horizon:** no model significantly beats HAR. The ES forests, trained only on post-2009 data, fail in the 2020 COVID spike.
+- **HAR vs Persistence:** HAR beats naive Persistence at every horizon for both targets.
+- **RQ1:** with volatility history alone (set A), neither ML model beats HAR.
+- **RQ2:** the forest gains significantly more than the elastic net from richer features at 1 and 5 days.
+- **RQ3:** the ES target does not align better with the variance-swap payoff.
 
 ## Requirements
 
-- MATLAB R2026a
-- MATLAB Statistics and Machine Learning Toolbox
-- `zsh` to use the parallel shell runner
-- The project input files in [`Realize Volatility Data/`](Realize%20Volatility%20Data/)
-
-The shell runner launches separate MATLAB processes for target/horizon jobs and does not require Parallel Computing Toolbox. Its default MATLAB executable path is configured for macOS; set `MATLAB` to your local executable path on other systems.
+- MATLAB R2026a with the Statistics and Machine Learning Toolbox (the Parallel Computing and Econometrics toolboxes are not needed)
+- `zsh` for the parallel runner; set `MATLAB=/path/to/matlab` if MATLAB is not in `/Applications`
+- To rebuild the report: Python 3 and pandoc, plus xelatex for the PDF
 
 ## Run the project
 
-From the repository root, run the main development design:
+From the repository root:
 
 ```sh
-MATLAB=/path/to/matlab Code/run_parallel.sh dev
+Code/run_parallel.sh dev all      # development period: main design + all robustness scenarios
+Code/run_parallel.sh test all     # locked test (cfg.runLockedTest in Code/rv_config.m must be true)
+Code/run_parallel.sh dev main     # one scenario only (main, rolling, rv15, qmle, strict, rv1, rk, holdrop, oxford, vix1996, rfdefault, ffdlags)
+python3 Report/build_report.py    # rebuild the report (.docx and .pdf)
 ```
 
-Run all robustness scenarios:
-
-```sh
-MATLAB=/path/to/matlab Code/run_parallel.sh dev robustness
-```
-
-To run one scenario, replace `robustness` with a scenario name such as `rolling`, `rv15`, `holdrop`, or `ffdlags`. For a serial run in MATLAB, add `Code/` to the MATLAB path and run `main`. The full pipeline can take several minutes for the main design and substantially longer for all robustness cases.
-
-Results are written beneath `Output/forecasts/`, `Output/tables/`, and `Output/logs/`; the panel cache is `Output/panel.mat`. The development summary for a scenario is written to `Output/tables/dev/<scenario>/summary.md`.
-
-## Team modules and the integration check
-
-Each team member's work lives in its own folder and is checked against the main pipeline:
-
-| Module | Owner | What it does | Run |
-|---|---|---|---|
-| [`Code/`](Code/) | James (lead), all | Main pipeline: data panel, features, walk-forward, Persistence, HAR, elastic net, random forest, evaluation, diagnostics | `Code/run_parallel.sh dev` |
-| [`Code/Robin/`](Code/Robin/) | Robin | Data preparation as standalone files: targets, aligned features with publication lags, nested feature sets A–D (`Output/Robin/`) | in MATLAB from the repo root: `addpath Code Code/Robin; robin_targets; robin_align_features; robin_feature_sets` |
-| [`aryan/`](aryan/) | Aryan | Independent HAR vs Persistence pipeline with its own rules (strict missing-day rule, ES holiday rows dropped), outputs in `aryan/output/` | `run('aryan/code/rv_har_pipeline.m')` |
-| [`Code/check_integration.m`](Code/check_integration.m) | all | Verifies that Robin's feature sets equal the main pipeline's and that Aryan's HAR and Persistence agree with the main pipeline on development data; writes `Output/tables/integration_check.csv` | in MATLAB: `addpath Code; check_integration` |
-
-On 21 Oct 2026 all eight checks passed: Robin's 46 features and three targets match `build_design.m` to within 1e-14 for both targets, and Aryan's HAR and Persistence forecasts have correlations of 0.999–1.000 with the main pipeline's, with HAR/Persistence QLIKE ratios within 0.01.
-
-The locked test runner is `Code/run_parallel.sh test`, but it refuses to run unless `cfg.runLockedTest` is explicitly enabled. Only change that setting after the design has been finalized.
+For a serial run inside MATLAB, run `Code/main.m`. Results go to `Output/forecasts/<phase>/<scenario>/` and `Output/tables/<phase>/<scenario>/`, with one readable `summary.md` per scenario. The modelling dataset and feature dictionary go to `Output/data/`, and logs to `Output/logs/`.
 
 ## Repository map
 
 | Path | Contents |
 |---|---|
-| [`Code/`](Code/) | MATLAB forecasting pipeline, model fitting, evaluation, diagnostics, and runner documentation |
-| [`Code/Robin/`](Code/Robin/), [`Output/Robin/`](Output/Robin/) | Robin's data-preparation module and its outputs |
-| [`aryan/`](aryan/) | Aryan's standalone HAR vs Persistence cross-check (code, outputs, proposal Word source) |
-| [`Realize Volatility Data/`](Realize%20Volatility%20Data/) | Input datasets, data dictionary, coverage notes, and quality-control reports |
-| [`Output/`](Output/) | Cached panel, forecasts, logs, tables, and audit outputs |
-| [`Report/`](Report/) | Research report source, report builder, and figures |
-| [`Research Papers/`](Research%20Papers/) | Reference research papers |
-| [`agents/`](agents/) | Design notes for project-specific coding agents |
+| [`Code/`](Code/) | The MATLAB pipeline, organised by stage: `data/`, `stationarity/`, `models/`, `evaluation/`; see [`Code/README.md`](Code/README.md) |
+| [`Realize Volatility Data/`](Realize%20Volatility%20Data/) | Input datasets, proposal v5.4 (PDF and Word), data description, data dictionary and QC reports |
+| [`Output/`](Output/) | Cached panel, modelling dataset, forecasts, tables, audits and logs |
+| [`Report/`](Report/) | Final report (Markdown source, `.docx`, `.pdf`), figures and builder |
+| [`docs/Project_Guide.md`](docs/Project_Guide.md) | Plain-language guide to the concepts, design, code and results, with an FAQ |
+| [`Research Papers/`](Research%20Papers/) | The reference papers |
+| [`agents/`](agents/) | Notes for coding agents working on this repository |
 
-For the detailed pipeline, feature sets, robustness scenarios, and output descriptions, see [`Code/README.md`](Code/README.md). Data definitions and source limitations are documented in [`Realize Volatility Data/DATA_DICTIONARY.md`](Realize%20Volatility%20Data/DATA_DICTIONARY.md) and [`Realize Volatility Data/QC_REPORT.md`](Realize%20Volatility%20Data/QC_REPORT.md). The report source is [`Report/RV_Forecasting_Report.md`](Report/RV_Forecasting_Report.md).
+## Team
+
+| Member | Lead responsibility | Pipeline stage |
+|---|---|---|
+| Robin | Targets, feature alignment and publication lags, data dictionary, QC | `Code/data/` |
+| James | Persistence and HAR, walk-forward engine, DM tests and MCS | `Code/models/`, `Code/evaluation/` |
+| Aryan | Elastic net and random forest, tuning, coefficients and feature importance | `Code/models/`, `Code/evaluation/explain_rf.m` |
+| All | Stationarity, utility and variance-swap checks, report and presentation | `Code/stationarity/`, `Report/` |
 
 ## Research and data use
 
-This is an academic research project. Review the source terms and the project data notes before redistributing any input data. Dataset coverage, missing observations, publication timing, and provisional data-treatment decisions are described in the data documentation and report; preserve those caveats when interpreting results.
+This is an academic research project. Review each source's terms before redistributing any input data. Coverage, missing observations, publication timing and the data-treatment decisions are described in the data documentation and the report; keep those caveats in mind when interpreting results.

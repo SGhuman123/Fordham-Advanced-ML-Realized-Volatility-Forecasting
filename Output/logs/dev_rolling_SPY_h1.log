@@ -1,8 +1,8 @@
 [dev rolling SPY h=1] PER_A  2010-2017   2013 forecasts     0.1s
 [dev rolling SPY h=1] HAR_A  2010-2017   2013 forecasts     0.1s
-[dev rolling SPY h=1] EN_A   2010-2017   2013 forecasts     0.2s
-[dev rolling SPY h=1] RF_A   2010-2017   2013 forecasts    26.4s
+[dev rolling SPY h=1] EN_A   2010-2017   2013 forecasts     0.7s
+[dev rolling SPY h=1] RF_A   2010-2017   2013 forecasts    26.0s
 [dev rolling SPY h=1] EN_C   2010-2017   2013 forecasts     0.9s
-[dev rolling SPY h=1] RF_C   2010-2017   2013 forecasts    82.8s
+[dev rolling SPY h=1] RF_C   2010-2017   2013 forecasts    97.8s
 [dev rolling SPY h=1] EN_D   2015-2017    755 forecasts     0.5s
-[dev rolling SPY h=1] RF_D   2015-2017    755 forecasts    18.4s
+[dev rolling SPY h=1] RF_D   2015-2017    755 forecasts    28.5s

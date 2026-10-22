@@ -1,0 +1,4 @@
+model_set,feature,d_min,d_median,d_max,share_folds_ffd,mean_rho
+EN_D,iv_atm_1y,0,0,0.15,0.333333333333333,0.996347350698102
+EN_D,t10y3m,0.25,0.3,0.4,1,0.945790996666325
+EN_D,dgs10,0.1,0.25,0.4,1,0.955381043117361
