@@ -8,6 +8,8 @@ The implementation uses an annual walk-forward evaluation. Models are tuned on t
 
 The checked-in report describes development-period results through 2017. The 2018–2026 test period is intentionally locked and has not been run. Do not unlock it until the team has frozen and agreed on all design choices; the guard is `cfg.runLockedTest` in [`Code/rv_config.m`](Code/rv_config.m).
 
+**Disclosure.** An earlier version of Aryan's standalone HAR script (on the `Aryan-dev` branch, 20 Oct 2026) also scored HAR and the Persistence benchmark on the 2018–2026 test period. Neither model has tuning parameters, and no design choice has been based on those numbers. In the integrated code the script respects the same `cfg.runLockedTest` lock, and its committed outputs contain development years only. The report records this in Section 10.
+
 ## Requirements
 
 - MATLAB R2026a
@@ -35,6 +37,19 @@ To run one scenario, replace `robustness` with a scenario name such as `rolling`
 
 Results are written beneath `Output/forecasts/`, `Output/tables/`, and `Output/logs/`; the panel cache is `Output/panel.mat`. The development summary for a scenario is written to `Output/tables/dev/<scenario>/summary.md`.
 
+## Team modules and the integration check
+
+Each team member's work lives in its own folder and is checked against the main pipeline:
+
+| Module | Owner | What it does | Run |
+|---|---|---|---|
+| [`Code/`](Code/) | James (lead), all | Main pipeline: data panel, features, walk-forward, Persistence, HAR, elastic net, random forest, evaluation, diagnostics | `Code/run_parallel.sh dev` |
+| [`Code/Robin/`](Code/Robin/) | Robin | Data preparation as standalone files: targets, aligned features with publication lags, nested feature sets A–D (`Output/Robin/`) | in MATLAB from the repo root: `addpath Code Code/Robin; robin_targets; robin_align_features; robin_feature_sets` |
+| [`aryan/`](aryan/) | Aryan | Independent HAR vs Persistence pipeline with its own rules (strict missing-day rule, ES holiday rows dropped), outputs in `aryan/output/` | `run('aryan/code/rv_har_pipeline.m')` |
+| [`Code/check_integration.m`](Code/check_integration.m) | all | Verifies that Robin's feature sets equal the main pipeline's and that Aryan's HAR and Persistence agree with the main pipeline on development data; writes `Output/tables/integration_check.csv` | in MATLAB: `addpath Code; check_integration` |
+
+On 21 Oct 2026 all eight checks passed: Robin's 46 features and three targets match `build_design.m` to within 1e-14 for both targets, and Aryan's HAR and Persistence forecasts have correlations of 0.999–1.000 with the main pipeline's, with HAR/Persistence QLIKE ratios within 0.01.
+
 The locked test runner is `Code/run_parallel.sh test`, but it refuses to run unless `cfg.runLockedTest` is explicitly enabled. Only change that setting after the design has been finalized.
 
 ## Repository map
@@ -42,6 +57,8 @@ The locked test runner is `Code/run_parallel.sh test`, but it refuses to run unl
 | Path | Contents |
 |---|---|
 | [`Code/`](Code/) | MATLAB forecasting pipeline, model fitting, evaluation, diagnostics, and runner documentation |
+| [`Code/Robin/`](Code/Robin/), [`Output/Robin/`](Output/Robin/) | Robin's data-preparation module and its outputs |
+| [`aryan/`](aryan/) | Aryan's standalone HAR vs Persistence cross-check (code, outputs, proposal Word source) |
 | [`Realize Volatility Data/`](Realize%20Volatility%20Data/) | Input datasets, data dictionary, coverage notes, and quality-control reports |
 | [`Output/`](Output/) | Cached panel, forecasts, logs, tables, and audit outputs |
 | [`Report/`](Report/) | Research report source, report builder, and figures |

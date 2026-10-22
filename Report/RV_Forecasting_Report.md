@@ -741,6 +741,7 @@ Set D is unaffected because the ES realized kernel carries most of the signal. P
 7. **A stylized variance-swap check.** VIX² only approximates the strike; there are no costs; trades overlap.
 8. **Many tests.** Read individual p-values together with the MCS.
 9. **Hand-coded tests.** ADF and KPSS are coded directly rather than taken from the Econometrics Toolbox. They reproduce the textbook behaviour on simulated white noise and random walks.
+10. **An early look at two benchmarks on the test period.** An earlier version of Aryan's independent HAR script also scored HAR and Persistence on 2018–2026 (20 October 2026). Neither benchmark has tuning parameters, and no design choice in this report uses those numbers. The integrated script now follows the same test lock as the main pipeline, and its committed outputs cover development years only. We disclose this so the locked test can be read with it in mind.
 
 **Decisions to take before unlocking the test.**
 
@@ -774,6 +775,9 @@ All code is in `Code/` (MATLAB R2026a with the Statistics and Machine Learning T
 | Walk-forward and jobs | `walk_forward.m`, `run_job.m`, `make_spec.m` (main and robustness scenarios), `rv_config.m` (every setting and the test lock) |
 | Evaluation and explanation | `evaluate_phase.m`, `qlike.m`, `dm_test.m`, `mcs.m`; `explain_rf.m` (Shapley, ALE); `long_memory.m`; `data_audit.m` |
 | Drivers and report | `run_parallel.sh`, `main.m`; `report_figures.m`, `Report/build_report.py` |
+| Team modules and integration check | `Code/Robin/` (Robin: targets, aligned features, feature sets A–D as standalone files); `aryan/code/rv_har_pipeline.m` (Aryan: independent HAR vs Persistence with its own rules); `Code/check_integration.m` |
+
+**Integration check (21 October 2026).** Robin's standalone data preparation reproduces the main pipeline's 46 features and three targets to within $10^{-14}$ for both targets. Aryan's independent HAR and Persistence forecasts have correlations of 0.999–1.000 with the main pipeline's on development data, and their HAR/Persistence QLIKE ratios differ by at most 0.01, even though his script uses its own missing-day, holiday and floor rules.
 
 **How to run.**
 
@@ -939,7 +943,7 @@ Status key:
 | Tuning on the last two years; label gap (eq. 10) (§5) | Done | `walk_forward.m` |
 | Availability timing and publication shifts (§5) | Done | `build_design.m` |
 | Rolling 10-year (8-year ES) robustness (§5) | Done | scenario `rolling` |
-| Locked 2018–2026 test examined once (§5) | Pending | `cfg.runLockedTest = false` |
+| Locked 2018–2026 test examined once (§5) | Pending (early benchmark look disclosed, Section 10) | `cfg.runLockedTest = false` |
 | MSE, QLIKE, MAE, OOS $R^2$ on the same origins (§6) | Done | `loss_*.csv` |
 | DM (Newey–West + HLN) against HAR and Persistence; MCS at 10% over Persistence, HAR, EN, RF (§6) | Done | `dm_test.m`, `mcs.m`, `loss_*.csv`, `rq1_*.csv` |
 | Loss ratios vs HAR and vs Persistence; RQ2 difference-in-differences (§6) | Done | `loss_ratios_vs_HAR.csv`, `rq2_*.csv` |
