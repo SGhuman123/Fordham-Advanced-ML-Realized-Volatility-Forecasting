@@ -81,7 +81,7 @@ for Y = years
     floorSub = min(Dz.rv(inWin(lastSub)));
     switch model
         case 'PER'
-            M = fit_persistence(Dz.rv, h, cfg);
+            M = fit_persistence(Dz.rv, h, Dz.lagMinFrac);
         case 'HAR'
             M = fit_har(Xtr, ytr, floorTr);
         case 'EN'

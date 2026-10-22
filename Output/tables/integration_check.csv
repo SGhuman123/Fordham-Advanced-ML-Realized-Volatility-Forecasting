@@ -1,9 +1,0 @@
-check,target,h,n,detail,pass
-Robin feature sets vs build_design,SPY,NaN,5474,"46 features + 3 targets; max relative difference 9.5e-15; NaN mismatches 0; unmatched columns 0",1
-Robin feature sets vs build_design,ES,NaN,4215,"46 features + 3 targets; max relative difference 8.1e-15; NaN mismatches 0; unmatched columns 0",1
-Aryan HAR/Persistence vs main pipeline,SPY,1,2012,"corr HAR 1.0000, corr Persistence 1.0000; QLIKE HAR/Persistence: main 0.943, Aryan 0.945",1
-Aryan HAR/Persistence vs main pipeline,SPY,5,2008,"corr HAR 1.0000, corr Persistence 1.0000; QLIKE HAR/Persistence: main 0.912, Aryan 0.916",1
-Aryan HAR/Persistence vs main pipeline,SPY,22,1991,"corr HAR 1.0000, corr Persistence 1.0000; QLIKE HAR/Persistence: main 0.889, Aryan 0.895",1
-Aryan HAR/Persistence vs main pipeline,ES,1,754,"corr HAR 0.9989, corr Persistence 0.9987; QLIKE HAR/Persistence: main 1.060, Aryan 1.065",1
-Aryan HAR/Persistence vs main pipeline,ES,5,750,"corr HAR 0.9993, corr Persistence 0.9995; QLIKE HAR/Persistence: main 1.108, Aryan 1.099",1
-Aryan HAR/Persistence vs main pipeline,ES,22,733,"corr HAR 0.9996, corr Persistence 0.9999; QLIKE HAR/Persistence: main 1.020, Aryan 1.026",1

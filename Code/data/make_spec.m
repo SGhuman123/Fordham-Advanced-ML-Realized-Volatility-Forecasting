@@ -15,6 +15,10 @@ function spec = make_spec(target, scenario)
 %   rfdefault  SPY/ES  random forest with untuned Breiman defaults (Christensen et al., 2023)
 %   ffdlags    SPY/ES  ML lag block replaced by FFD log RV (proposal v5.4 4.3); HAR and
 %                      Persistence stay on the raw lags
+%   strict     SPY     strict missing-day rule (proposal 3.2 open decision): drop every
+%                      origin whose target or 22-day lag window touches a missing
+%                      Risk Lab day, instead of the 80% / 20% rules. Development
+%                      has no missing SPY day, so it changes only the test
 
 spec.target        = target;
 spec.scenario      = scenario;
@@ -23,6 +27,7 @@ spec.esHoliday     = 'merge';
 spec.window        = 'expanding';
 spec.startOverride = [];
 spec.rfDefault     = false;
+spec.strict        = false;    % strict missing-day rule (scenario 'strict')
 spec.mlOnA         = true;     % EN and RF also run on set A
 spec.sets          = {'A','B','C','D'};
 robustSets         = {'A','C','D'};
@@ -47,6 +52,9 @@ switch scenario
         spec.sets = {'A','AL','BL','CL','DL'};  spec.mlOnA = false;
     case 'rfdefault'
         spec.rfDefault = true;  spec.sets = robustSets;
+    case 'strict'
+        assert(strcmp(target,'SPY'), 'strict is a SPY-target check (ES has no missing day)');
+        spec.strict = true;  spec.sets = robustSets;
     case 'vix1996'
         assert(strcmp(target,'SPY'), 'vix1996 is a SPY-target check');
         spec.startOverride = datetime(1996,3,1);   % first full month of HAR lags

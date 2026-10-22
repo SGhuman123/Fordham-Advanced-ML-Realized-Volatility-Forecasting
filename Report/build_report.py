@@ -4,7 +4,8 @@ style of the v5.2 proposal: navy title block and headings, justified body text,
 shaded table headers, numbered display equations, captioned figures and
 centred page numbers.
 
-Usage:  python3 build_report.py          (needs pandoc on the PATH)
+Usage:  python3 build_report.py          (needs pandoc on the PATH; the PDF
+                                         also needs xelatex, e.g. MacTeX)
 
 Markdown conventions understood here:
   * a display equation $$...$$ followed by a paragraph EQNUM(n) gets the
@@ -21,6 +22,7 @@ import zipfile
 HERE = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(HERE, "RV_Forecasting_Report.md")
 OUT = os.path.join(HERE, "RV_Forecasting_Report.docx")
+PDF = os.path.join(HERE, "RV_Forecasting_Report.pdf")
 
 NAVY = "1F3864"
 NAVY2 = "2E4A7D"
@@ -241,5 +243,42 @@ def main():
     print(f"build_report: wrote {OUT} ({n_eq} numbered equations)")
 
 
+def build_pdf():
+    """PDF through pandoc + xelatex from the same Markdown source."""
+    if not shutil.which("xelatex"):
+        print("build_report: xelatex not found, PDF skipped")
+        return
+    md = open(SRC, encoding="utf8").read()
+    # EQNUM(n) after a display equation becomes \tag{n} inside it
+    md = re.sub(r"\$\$(.+?)\$\$\s*\n\s*EQNUM\((\d+)\)", lambda m: "$$" + m.group(1) + r"\tag{" + m.group(2) + "}$$",
+                md, flags=re.S)
+    md = re.sub(r"```\{=openxml\}.*?```", r"\\newpage", md, flags=re.S)
+    md = re.sub(r"!\[\*Figure \d+\.\*\s*", "![", md)   # LaTeX numbers figures itself
+    for ch, tex in [("✓", r"\ensuremath{\checkmark}"), ("→", r"\ensuremath{\rightarrow}"),
+                    ("≈", r"\ensuremath{\approx}"), ("≤", r"\ensuremath{\le}"), ("≥", r"\ensuremath{\ge}")]:
+        md = md.replace(ch, tex)   # glyphs missing from the text font
+    tmp = tempfile.mkdtemp()
+    src = os.path.join(tmp, "report.md")
+    open(src, "w", encoding="utf8").write(md)
+    head = os.path.join(tmp, "head.tex")
+    open(head, "w", encoding="utf8").write(
+        "\\usepackage{xcolor}\\definecolor{navy}{HTML}{" + NAVY + "}\n"
+        "\\makeatletter\n"
+        "\\renewcommand\\section{\\@startsection{section}{1}{\\z@}{-3ex plus -1ex}{1.2ex}{\\color{navy}\\sffamily\\Large\\bfseries}}\n"
+        "\\renewcommand\\subsection{\\@startsection{subsection}{2}{\\z@}{-2.5ex plus -1ex}{0.8ex}{\\color{navy}\\sffamily\\large\\bfseries}}\n"
+        "\\makeatother\n"
+        "\\usepackage{caption}\\captionsetup{font=small}\n"
+        "\\renewcommand{\\arraystretch}{1.15}\n"
+        "\\AtBeginEnvironment{longtable}{\\footnotesize}\n")
+    subprocess.run(["pandoc", src, "-f", "markdown+tex_math_dollars+pipe_tables+implicit_figures",
+                    "-o", PDF, "--pdf-engine=xelatex", "--resource-path", HERE, "-H", head,
+                    "-V", "geometry:margin=0.8in", "-V", "fontsize=10pt", "-V", "colorlinks=true",
+                    "-V", "mainfont=STIX Two Text", "-V", "sansfont=Helvetica Neue",
+                    "-V", "mathfont=STIX Two Math", "--columns", "80"], check=True, cwd=HERE)
+    shutil.rmtree(tmp)
+    print(f"build_report: wrote {PDF}")
+
+
 if __name__ == "__main__":
     main()
+    build_pdf()

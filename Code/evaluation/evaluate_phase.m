@@ -9,6 +9,7 @@ function evaluate_phase(phase, scenario)
 %   and the target is observed. Losses are on daily %^2 variance.
 
 if nargin < 2, scenario = 'main'; end
+phase = char(phase);  scenario = char(scenario);
 cfg = rv_config();
 P   = load_panel(cfg);
 inDir  = fullfile(cfg.outDir, 'forecasts', phase, scenario);
@@ -110,6 +111,8 @@ for target = {'SPY','ES'}
         T7 = explain_table(R);
         writetable(T7, fullfile(outDir, ['explain_' tag '.csv']));
         explain_md(md, T7);
+        T7b = har_table(R);
+        writetable(T7b, fullfile(outDir, ['har_coefficients_' tag '.csv']));
         T8 = ffd_table(R);
         if ~isempty(T8)
             writetable(T8, fullfile(outDir, ['ffd_' tag '.csv']));
@@ -390,6 +393,15 @@ for k = fieldnames(R)'
         mean(coef, 1)', mean(coef ~= 0, 1)', mean(imp, 1)', ...
         'VariableNames', {'model','set','feature','mean_std_coef','selection_freq','mean_importance'})]; %#ok<AGROW>
 end
+end
+
+function T = har_table(R)
+% HAR (eq. 7) coefficients of every annual re-fit
+fo = R.HAR_A.folds;
+C = vertcat(fo.coef);
+b0 = arrayfun(@(f) f.params.b0, fo)';
+T = table([fo.year]', [fo.nTrain]', b0, C(:,1), C(:,2), C(:,3), sum(C, 2), ...
+    'VariableNames', {'forecast_year','n_train','b0','b_d','b_w','b_m','persistence_sum'});
 end
 
 function T = ffd_table(R)

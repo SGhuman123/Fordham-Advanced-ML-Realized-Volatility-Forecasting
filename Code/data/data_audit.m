@@ -6,8 +6,10 @@ function data_audit()
 %   3. Affected SPY test forecast origins by horizon: origins are NYSE sessions
 %      from 2 Jan 2018 whose h-day target ends by 5 Oct 2026; for each origin t
 %      count missing sessions in t+1..t+h (target) and t-21..t (HAR lags).
-%   Only data availability is inspected (no model is run), so the test lock is
-%   not affected. Output: Output/tables/data_audit.md and .csv files.
+%   4. Cross-check of the SPY target (proposal 3): Risk Lab rv5 against the
+%      Oxford-Man SPX rv5 on their common days, 2005 - Feb 2022.
+%   Only data availability is inspected (no model is run).
+%   Output: Output/tables/audit_*.csv
 
 cfg = rv_config();
 P   = load_panel(cfg);
@@ -55,6 +57,13 @@ for h = cfg.horizons
 end
 writetable(T3, fullfile(outDir, 'audit_test_origins.csv'));
 
-disp(T1); disp(T2); disp(T3);
+% ---- 4. Risk Lab vs Oxford-Man SPX 5-minute RV ---------------------------------
+both = ~isnan(P.rv_spy) & ~isnan(P.om_rv5) & d >= datetime(2005,1,1);
+a = P.rv_spy(both);  b = P.om_rv5(both);
+T4 = table(sum(both), corr(a, b), corr(log(a), log(b)), median(a ./ b), ...
+    'VariableNames', {'common_days_2005_2022','corr_variance','corr_log_variance','median_ratio_RiskLab_over_OM'});
+writetable(T4, fullfile(outDir, 'audit_target_crosscheck.csv'));
+
+disp(T1); disp(T2); disp(T3); disp(T4);
 fprintf('data_audit: wrote audit_*.csv to %s\n', outDir);
 end

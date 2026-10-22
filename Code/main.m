@@ -4,7 +4,7 @@
 %   target x horizon. The locked 2018-2026 test runs only after the design is
 %   frozen: set cfg.runLockedTest = true in rv_config.m, then use phase 'test'.
 
-addpath(fileparts(mfilename('fullpath')));
+addpath(genpath(fileparts(mfilename('fullpath'))));
 cfg   = rv_config();
 phase = 'dev';
 
@@ -20,9 +20,10 @@ explain_rf('ES',  22, 'D', phase);
 long_memory(phase);
 stationarity(phase);
 data_audit;
+export_design;
 
 % Robustness checks (Section 6)
-robust = {'rolling', {'SPY','ES'}; 'rv15', {'SPY'}; 'qmle', {'SPY'}; 'rv1', {'ES'}; ...
+robust = {'rolling', {'SPY','ES'}; 'rv15', {'SPY'}; 'qmle', {'SPY'}; 'strict', {'SPY'}; 'rv1', {'ES'}; ...
           'rk', {'ES'}; 'holdrop', {'ES'}; 'oxford', {'SPY'}; 'vix1996', {'SPY'}; 'rfdefault', {'SPY','ES'}; 'ffdlags', {'SPY','ES'}};
 for r = 1:size(robust, 1)
     for target = robust{r, 2}
