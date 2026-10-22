@@ -57,5 +57,5 @@ cfg.seed = 20261014;
 
 % The 2018-2026 block is evaluated once, after every design choice is frozen.
 % Set this to true only when the team agrees the development settings are final.
-cfg.runLockedTest = false;
+cfg.runLockedTest = true;    % unlocked once, after the design-freeze tag
 end

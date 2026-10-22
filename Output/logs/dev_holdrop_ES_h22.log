@@ -1,8 +1,8 @@
 [dev holdrop ES h=22] PER_A  2015-2017    755 forecasts     0.1s
 [dev holdrop ES h=22] HAR_A  2015-2017    755 forecasts     0.0s
 [dev holdrop ES h=22] EN_A   2015-2017    755 forecasts     0.1s
-[dev holdrop ES h=22] RF_A   2015-2017    755 forecasts     7.2s
-[dev holdrop ES h=22] EN_C   2015-2017    755 forecasts     0.3s
-[dev holdrop ES h=22] RF_C   2015-2017    755 forecasts     9.3s
+[dev holdrop ES h=22] RF_A   2015-2017    755 forecasts     8.0s
+[dev holdrop ES h=22] EN_C   2015-2017    755 forecasts     0.4s
+[dev holdrop ES h=22] RF_C   2015-2017    755 forecasts     9.4s
 [dev holdrop ES h=22] EN_D   2015-2017    755 forecasts     0.3s
-[dev holdrop ES h=22] RF_D   2015-2017    755 forecasts    10.5s
+[dev holdrop ES h=22] RF_D   2015-2017    755 forecasts    17.3s

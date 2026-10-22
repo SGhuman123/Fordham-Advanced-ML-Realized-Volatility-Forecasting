@@ -8,6 +8,7 @@ function run_job(target, h, phase, scenario)
 %   Output: Output/forecasts/<phase>/<scenario>/<target>_h<h>.mat
 
 if nargin < 4, scenario = 'main'; end
+target = char(target);  phase = char(phase);  scenario = char(scenario);
 cfg = rv_config();
 if strcmp(phase, 'test') && ~cfg.runLockedTest
     error(['run_job: the 2018-2026 test is locked. Freeze the design, then set ' ...

@@ -1,5 +1,5 @@
 [dev rfdefault ES h=22] PER_A  2015-2017    755 forecasts     0.1s
 [dev rfdefault ES h=22] HAR_A  2015-2017    755 forecasts     0.0s
-[dev rfdefault ES h=22] RF_A   2015-2017    755 forecasts     2.7s
-[dev rfdefault ES h=22] RF_C   2015-2017    755 forecasts     8.8s
-[dev rfdefault ES h=22] RF_D   2015-2017    755 forecasts    11.9s
+[dev rfdefault ES h=22] RF_A   2015-2017    755 forecasts     2.0s
+[dev rfdefault ES h=22] RF_C   2015-2017    755 forecasts    10.1s
+[dev rfdefault ES h=22] RF_D   2015-2017    755 forecasts    13.4s

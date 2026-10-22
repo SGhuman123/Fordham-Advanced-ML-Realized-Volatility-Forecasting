@@ -1,10 +1,10 @@
 [dev ffdlags ES h=22] PER_A  2015-2017    755 forecasts     0.1s
 [dev ffdlags ES h=22] HAR_A  2015-2017    755 forecasts     0.0s
-[dev ffdlags ES h=22] EN_AL  2015-2017    755 forecasts     0.2s
-[dev ffdlags ES h=22] RF_AL  2015-2017    755 forecasts     8.5s
+[dev ffdlags ES h=22] EN_AL  2015-2017    755 forecasts     0.1s
+[dev ffdlags ES h=22] RF_AL  2015-2017    755 forecasts     5.6s
 [dev ffdlags ES h=22] EN_BL  2015-2017    755 forecasts     0.3s
-[dev ffdlags ES h=22] RF_BL  2015-2017    755 forecasts     7.9s
-[dev ffdlags ES h=22] EN_CL  2015-2017    755 forecasts     0.3s
-[dev ffdlags ES h=22] RF_CL  2015-2017    755 forecasts     7.3s
-[dev ffdlags ES h=22] EN_DL  2015-2017    755 forecasts     0.2s
-[dev ffdlags ES h=22] RF_DL  2015-2017    755 forecasts    10.0s
+[dev ffdlags ES h=22] RF_BL  2015-2017    755 forecasts     6.7s
+[dev ffdlags ES h=22] EN_CL  2015-2017    755 forecasts     0.2s
+[dev ffdlags ES h=22] RF_CL  2015-2017    755 forecasts     7.1s
+[dev ffdlags ES h=22] EN_DL  2015-2017    755 forecasts     0.3s
+[dev ffdlags ES h=22] RF_DL  2015-2017    755 forecasts    11.2s
