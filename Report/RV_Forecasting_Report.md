@@ -142,6 +142,7 @@ Pre-2005 Risk Lab data enter only a VIX-only robustness check.
 - **Treatment, frozen before the test.** Proposal v5.4 left the treatment of missing days to be decided once the counts were measured. The team froze four rules, all switches in `rv_config.m` / `build_design.m`:
   1. a multi-day target is dropped if more than 20% of its window is missing;
   2. weekly and monthly RV lags are built from the observed days if at least 80% of the window is present;
+     - The one exception is `overnight_w`, the 5-day average of overnight variance in set D, which is built if at least 60% of the window (3 of 5 days) is present; it was coded this way before the design freeze and is left unchanged so the locked test results match the code.
   3. an origin whose own $\mathrm{RV}_t$ is missing is dropped, for every model alike;
   4. on a day when a daily input has no value (e.g. a bond holiday), its last published value is used for at most 5 sessions (10 for weekly series), which uses no future information.
 
