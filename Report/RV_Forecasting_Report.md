@@ -118,12 +118,18 @@ Pre-2005 Risk Lab data enter only a VIX-only robustness check.
 ## 3.2 Missing data, holidays and staggered starts
 
 - **Calendar.** Every series is aligned to the NYSE trading-day calendar, and FFD (Section 4.3) is computed over NYSE sessions. Weekends and exchange holidays are therefore not missing observations. Weekly NFCI and STLFSI4 are placed on their release date and held until the next release.
-- **Late starts.** A series that begins after the sample start has its features, and its FFD transform, only from its first date plus the FFD window $\ell_\tau$. Earlier rows are unavailable for that feature. This applies to:
+- **Late starts.** Some series begin after the sample start:
   - VVIX (Mar 2006);
-  - real-time ADS (Dec 2008);
+  - real-time ADS (Dec 2008; before that, the revised vintage lagged 5 days is used in training rows, Section 5);
   - VIX3M (Sep 2009);
   - the ES/set-D measures (Sep 2009);
   - VIX9D (Jan 2011).
+
+  The raw data and the model inputs are treated differently:
+  - **Raw data.** A late-starting series has no observed values before its first date, and its FFD transform has none before its first date plus the FFD window $\ell_\tau$.
+  - **Entry into a fold.** In each walk-forward fold, a feature is used only once it has at least three years (3 × 252 rows) of non-missing values in that fold's training window. Until then it is left out of the fold.
+  - **Median fill.** Once a feature is in a fold, every missing row, in the training window and in the forecast year, is set to the training-window median. This includes all rows before the series began. The median uses training rows only, so no test information enters (`walk_forward.m`).
+  - **Consequence for SPY sets B and C.** These models train from 2005, so the VIX3M − VIX and VIX9D − VIX spreads hold one constant value from January 2005 to their start dates, including the whole 2008 crisis. That is 36% and 46% of training rows at the first test re-fit (end of 2017), falling to 23% and 29% at the last (end of 2025). Models trained from 2010 (all ES models and set D) have at most one year filled. Section 8.7 shows how this bears on the feature-importance results. This is part of the frozen design and is not changed after the test.
 
   Comparisons across sets use common days only.
 - **Missing trading days.** We reproduced the proposal's counts exactly from the raw files (`data_audit.m`):
@@ -599,9 +605,11 @@ QLIKE ratio vs HAR on the test; the best one or two forecasts per cell, plus Per
 | 2022 bear market | RF C 0.66, EN B/C 0.66 | EN B 0.72 | RF B 0.68, RF C 0.70 | RF C 0.83, RF D 0.86 |
 | April 2025 tariffs | RF D 0.41, RF C 0.42 | EN D 0.52, RF D 0.58 | RF D 0.53, RF B 0.56 | EN B/C 0.82 |
 
+**Caveat on the SPY Feb 2018 row.** Risk Lab SPY data are missing for 5–9 February 2018, which includes the spike week itself. Under the missing-data rules (Section 3.2), forecasts whose targets or lag windows fall in the gap are dropped. The SPY episode results therefore use only 17 days at 1 day and 14 at 22 days, out of the 43 sessions in the window, and none from the spike week, so they do not fully represent the episode. The ES results are not affected (43 days at both horizons).
+
 - **At 1 day, ML beats HAR on extreme days and in stress episodes.** For SPY, the best forests halve HAR's loss on extreme days (0.51) and in April 2025 (0.41–0.42), and cut it by a third in 2022. This is the opposite of Rahimikia & Poon's single-stock finding.
 - **The COVID failure is a training-history failure.** Every model whose training window starts in 2010 (all ES models and SPY set D) never saw a crisis of 2008's size. In March 2020 these forests were 2.3–4.5 times worse than HAR. The SPY forests on sets B and C, trained from 2005 and so through the 2008 crisis, beat HAR in the same episode (0.72–0.80). A forest cannot forecast outside the range of volatility it was trained on (Section 9).
-- **Persistence is now poor everywhere except the first days of a spike,** where it reacts fastest (ES COVID 0.79, SPY Feb 2018 at 22 days 0.87).
+- **Persistence is now poor everywhere except the first days of a spike,** where it reacts fastest (ES COVID 0.79; SPY Feb 2018 at 22 days 0.87, on 14 days only).
 - **At 22 days, extreme days remain hard for everyone.** Only the elastic net on set B does slightly better than HAR (0.84 SPY, 0.97 ES).
 
 ## 8.6 Economic value: volatility-targeting utility
@@ -622,14 +630,26 @@ Realized utility (eq. 14) in % per year; the maximum is 4.00.
 
 ## 8.7 What drives the forecasts
 
-Averaged over the nine test re-fits:
+Averaged over the nine test re-fits (impurity importance for the forests, coefficients for the elastic net):
 
-- **Random forest, 1 day (set D):** the VIX9D − VIX spread dominates for both targets (27%), followed by the weekly negative-return average (10–12%), ES continuous variation (8–9%) and the ES negative semivariance (8–9%).
+- **The winning SPY forests (sets B and C, 1 and 5 days) are driven by the implied-vol term slope** `iv_term`, ATM IV(1Y) − IV(1M). It carries 37% (set B) and 39% (set C) of importance at 1 day, and 33% and 31% at 5 days. Next come:
+  - today's RV (13–14% at 1 day);
+  - the weekly negative-return average (11–14% at 1 day);
+  - Nasdaq implied vol, log VXN (7–8% at 1 day, 12–14% at 5 days).
+
+  The VIX9D − VIX and VIX3M − VIX spreads carry under 1% in these forests.
+- **Forests trained from 2010 rank the short-dated spread first instead.** At 1 day the VIX9D − VIX spread leads the SPY set-D forest (27%) and the ES forests on sets B, C and D (26–27%). In the set-D forests it is followed by the weekly negative-return average (10–12%), ES continuous variation (8–9%) and the ES negative semivariance (8–9%). None of these forests significantly beats HAR (Section 8.1).
+- **Why the spread matters in one group and not the other.** The two groups differ in training history:
+  - VIX9D starts in January 2011, and under the late-start rule (Section 3.2) its spread is set to the training median for every earlier row.
+  - For models trained from 2010 that is one year.
+  - For SPY sets B and C it is six years (2005–2010, including the 2008 crisis), 46% of training rows at the first test re-fit.
+
+  A constant value through the 2008 crisis gives the forest little reason to split on the spread, so the SPY B/C forests take their term-structure information from the IV term slope, which is observed from 2005. The importance shares therefore reflect data coverage as well as economic content. The two cannot be separated without changing the frozen design.
 - **Random forest, 22 days (set D):** the implied-vol term slope leads (9–10%), followed by cross-market implied vol (log VXN) and negative-return averages.
 - **Elastic net, set D:**
   - 1 day: the Parkinson range, the weekly negative-return average (negative), the VIX9D spread, the ES negative semivariance and the VRP, all selected in every re-fit.
   - 22 days: the VIX3M − VIX spread has the largest coefficient (negative), followed by the 1-month IV skew and the weekly ES jump average.
-- **Conclusion on implied volatility:** as on development data, implied volatility helps mainly through the **shape** of the term structure (short-dated spread, VIX3M spread, term slope) and the skew, not through its level. Macro, stress and calendar features again rank at the bottom.
+- **Conclusion on implied volatility:** as on development data, implied volatility helps mainly through the **shape** of the term structure and the skew, not through its level. For the winning SPY forests that shape enters through the IV term slope. For forests trained from 2010 it enters through the short-dated VIX9D spread, and for the elastic net through the VIX3M spread. Macro, stress and calendar features again rank at the bottom.
 - **HAR coefficients** are stable across re-fits (persistence $\beta_d+\beta_w+\beta_m$ = 0.88–0.92 at 1 day). After 2020 the weight moves from the monthly lag (0.19 → 0.05) to the weekly lag (0.47 → 0.56).
 - **Fractional differencing in the test re-fits:** the 10Y yield and the 10Y − 3M spread are differenced in every re-fit ($d^*$ 0.10–0.40, retained correlation 0.96–0.97), and ATM 1Y implied vol in a third of them. Every other input passes ADF undifferenced.
 
@@ -724,7 +744,7 @@ The project folder holds the three reference papers and the long-memory working 
 
 **With Christensen et al. on set A.** As they find, with volatility history alone the machine-learning models do no better than HAR. Unlike them, we find no gains that grow with the horizon. Under MSE our 22-day SPY ratios with covariates (0.86–0.92) are in their range but not significant over nine years of a single index; they forecast 29 stocks and refit daily.
 
-**Closest to Kılıç.** Our test results match his conclusion on the S&P 500: ML gains are concentrated at short horizons, they are modest, and extended macro predictors add nothing. Our 1-day SPY gain (12–15% QLIKE) is larger than his (about 1%), which we attribute to the implied-vol term-structure features he does not use. They are the forest's most important inputs.
+**Closest to Kılıç.** Our test results match his conclusion on the S&P 500: ML gains are concentrated at short horizons, they are modest, and extended macro predictors add nothing. Our 1-day SPY gain (12–15% QLIKE) is larger than his (about 1%), which we attribute to the implied-vol term-structure features he does not use. The 1-year minus 1-month IV slope is the winning forests' most important input (31–39% of importance).
 
 **Against Rahimikia & Poon.** At 1 day our forests do much *better* than HAR on extreme days (0.51 for SPY). Index RV is smoother than single-stock RV, and our models see the implied-vol term structure, which moves before realized volatility. At 22 days extreme days stay hard for every model.
 
@@ -813,7 +833,7 @@ All code is one MATLAB pipeline in `Code/` (MATLAB R2026a with the Statistics an
 | Tuning criterion | Validation QLIKE |
 | FFD grid and threshold | $\{0,0.05,\dots,1\}$; $\tau=10^{-3}$ |
 | ADF specification | Constant; Schwert lag length |
-| Late-starting inputs | Enter a fold once they have three years of history; earlier rows get the training median |
+| Late-starting inputs | Enter a fold once they have three years of non-missing training data; from then on every missing row, including rows before the series starts, gets the training-window median (§3.2) |
 | Calendar flags | Next-session early close; days to the next session |
 | DM bandwidth | $\max(\lceil1.5h\rceil,4(T/100)^{2/9})$ |
 | MCS bootstrap | Block length $\max(h,\lfloor\sqrt T\rfloor)$; 5,000 draws |
@@ -943,7 +963,7 @@ Status key:
 | Horizons 1, 5, 22; target = average RV over $t{+}1{:}t{+}h$ (§4.1) | Done | `build_design.m` |
 | Main target SPY rv5 from 2005; ES second target and set D from 2010 (§3.1) | Done; Risk Lab vs Oxford-Man correlation 0.968 reproduced | `data/sample_start.m`, `data/data_audit.m` |
 | NYSE calendar alignment; weekly series held to next release (§3.2) | Done (calendar from `features_daily.csv`; the named calendar file is not in the data folder) | `data/load_panel.m` |
-| Late starts from first date + $\ell_\tau$; common days only (§3.2) | Done | `ffd.m`, `walk_forward.m`, `evaluate_phase.m` |
+| Late starts from first date + $\ell_\tau$; common days only (§3.2) | Done for raw and FFD values. Model inputs differ: once a feature enters a fold, its rows before the start date get the training median (report §3.2) | `ffd.m`, `walk_forward.m`, `evaluate_phase.m` |
 | Missing-day counts measured (§3.2) | Done (reproduced exactly) | `data_audit.m` |
 | Missing-day treatment (§3.2: "will be decided") | Done (rules frozen before the test; strict-rule robustness) | `rv_config.m`, `data/build_design.m`; scenario `strict` |
 | ES holiday rows rolled forward; dropping as robustness (§3.2) | Done | `data/load_panel.m`; scenario `holdrop` |
