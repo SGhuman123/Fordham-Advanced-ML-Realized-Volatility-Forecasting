@@ -16,7 +16,7 @@ abstract: |
 
   **Findings on the locked test.**
 
-  - **SPY, 1 and 5 days:** the random forest on market features (set B or C) cuts QLIKE by 12–15% against HAR, significantly, and stays in the Model Confidence Set. The design's success criterion is met.
+  - **SPY, 1 and 5 days:** the random forest on market features (set B or C) cuts QLIKE by 12–15% against HAR, significantly, and stays in the Model Confidence Set. The design's success criterion is met. After a Holm correction across all 48 machine-learning-versus-HAR tests, the 1-day gain remains significant and the 5-day gain does not. The gains hold under QLIKE only: under MSE, none survives the correction. The variance-swap part of the criterion asks only for a positive correlation, and the scorecard's 22-day forecasts earn less than always selling variance.
   - **SPY 22 days and every ES horizon:** no model significantly beats HAR. The ES forests, trained on post-2009 data only, fail badly in the 2020 COVID spike.
   - **Benchmarks:** HAR beats naive Persistence at every horizon for both targets, reversing the calm 2015–2017 development window.
   - **RQ2:** the forest gains significantly more than the elastic net from richer features at 1 and 5 days, largely because the elastic net degrades.
@@ -510,7 +510,11 @@ Every number in this section comes from the single run of the frozen design. Re-
 - **ES: nothing beats HAR at any horizon.** The best ratios are 0.968 (RF D, 1 day) and 0.984 (EN D, 5 days), neither significant. The ES forests on sets A–C are 23–43% *worse* than HAR at 5 and 22 days.
 - **HAR beats Persistence everywhere.** Persistence is 21–56% worse than HAR, and HAR's advantage is significant at every horizon for both targets ($p\le0.04$; Section 8.2). This reverses the development window, where calm 2015–2017 flattered Persistence.
 - **The MCS rarely discriminates.** HAR is in the 10% MCS in every case. The MCS removes the worst forecasts (Persistence at short SPY horizons, the elastic net on SPY set D) but cannot separate HAR from the winning forests.
-- **MSE.** Under MSE, no improvement over HAR is significant anywhere, and every forecast is in the MSE MCS. The best SPY 1-day ratio is RF C at 0.69 ($p=0.08$).
+- **MSE: much weaker evidence.** The loss tables give a two-sided DM p-value for MSE but a one-sided one for QLIKE, so the two columns are not directly comparable.
+  - *Two-sided:* no improvement over HAR is significant anywhere. The best SPY 1-day ratio is RF C at 0.69 ($p=0.08$).
+  - *One-sided* (the test used for QLIKE): RF C at 1 day is nominally significant ($p=0.04$), the only such case among the 48 ML forecasts. It does not survive the Holm correction of Section 8.10 (adjusted $p=1.00$; `holm_ml_vs_har.csv`).
+  - Every forecast stays in the MSE MCS.
+  - *Why the two losses disagree:* MSE squares the errors, so a few spike days (March 2020 above all) dominate it, whereas QLIKE scores each error relative to the level of volatility. The success criterion is defined on QLIKE, the proposal's primary loss, and is a QLIKE result only.
 - **The elastic net still breaks down on some sets.** On SPY set D it is 2.1–2.9 times worse than HAR at 1 and 5 days, and on ES sets B and C 1.5–2.4 times worse; floors bind on up to 3% of days.
 - **Out-of-sample $R^2$** (MSE-based, against the HAR training mean):
 
@@ -576,12 +580,18 @@ The table gives the mean P&L per 22-day variance-swap trade (vol-points², actua
 | EN B | +45.9 ($t=0.7$), $\rho=0.13$ | +51.6 ($t=0.8$), $\rho=0.10$ |
 | RF B | +61.4 ($t=1.6$), $\rho=0.16$ | +21.1 ($t=0.3$), $\rho=0.08$ |
 | EN C | +33.1 ($t=0.5$), $\rho=0.10$ | +57.3 ($t=0.9$), $\rho=0.09$ |
+| RF C | +27.8 ($t=0.4$), $\rho=0.12$ | +19.7 ($t=0.3$), $\rho=0.08$ |
 | EN D | +52.7 ($t=0.8$), $\rho=0.12$ | +44.5 ($t=0.7$), $\rho=0.08$ |
 | RF D | +30.4 ($t=0.5$), $\rho=0.09$ | +17.9 ($t=0.3$), $\rho=0.08$ |
 
 - **Short variance paid, but noisily.** Selling variance every day earned about +70 vol-points² per trade, but the 2018, 2020 and 2025 spikes make it insignificant ($t\approx1$).
 - **Every estimated forecast times the swap in the right direction** (positive $\rho$), and Persistence does not ($\rho<0$). The success criterion's "directionally consistent" condition is therefore met for both targets.
-- **Only one timing rule is significant:** the set-A forest on the SPY target (+85.2, $t=2.3$, $\rho=0.28$), the only timing rule that beats always selling variance.
+- **Only one timing rule is significant:** the set-A forest on the SPY target (+85.2, $t=2.3$, $\rho=0.28$), the only timing rule that beats always selling variance. With 20 timing rules tested (10 per target), it would not survive a Holm correction (one-sided $p=0.012$, adjusted $p=0.24$; `holm_varswap.csv`).
+- **What the check can and cannot show.**
+  - *It tests the 22-day forecasts only.* The forests that pass the success criterion are 1- and 5-day forecasts, so the swap check does not test them. At 22 days, the forecast set of the 1-day winner (RF C) earns +27.8 for SPY ($t=0.4$).
+  - *The pass condition is weak.* "Directionally consistent" requires only $\rho>0$. Apart from SPY RF A, $\rho$ is 0.05–0.16, so the signal explains under 3% of the payoff's variance.
+  - *Timing adds little to always selling.* The estimated forecasts sell variance on 72–90% of days. Apart from SPY RF A, every timing rule earns less per trade than always selling.
+  - *It is stylized.* $\mathrm{VIX}^2$ only approximates the swap strike. There are no costs or margin. A one-unit trade opens every day, so about 22 positions overlap at any time. The $t$-statistics allow for this overlap: they use the DM routine's Newey–West variance with $h=22$.
 - **RQ3 answer: not supported.** ES-target forecasts do **not** line up better with the swap payoff. Their signal–payoff correlations (0.05–0.10) are lower than the SPY-target ones (0.09–0.28). The development-period hint (Section 7.2) does not survive the test, mainly because the ES models, trained without a crisis in their history, under-forecast the 2020 spike (Figure 5).
 
 ## 8.5 Regimes, extreme days and stress episodes
@@ -694,8 +704,24 @@ What the checks show:
 | ES | 22 | EN A | 1.000 | 0.50 | yes | no | 0.641 | **yes** | +53.7, $\rho=0.10$ (consistent) |
 
 - **The success criterion is met.** The random forest has statistically lower QLIKE than HAR at two horizons (SPY 1 and 5 days), the MCS includes it, and the variance-swap check is directionally consistent for both targets.
+- **Multiple testing.** After a Holm correction across all 48 ML-versus-HAR tests, the 1-day gain stays significant and the 5-day gain does not. The criterion is therefore met robustly at 1 day and only marginally at 5 days (table below).
+- **The verdict holds for QLIKE only.** Under MSE, no forecast beats HAR after the Holm correction, and the MSE MCS keeps every forecast (Section 8.1).
+- **The swap condition is a low bar.** "Directionally consistent" asks only for a positive signal–payoff correlation. The scorecard's 22-day entries (EN B for SPY, EN A for ES) have $\rho$ of 0.13 and 0.10. They earn less per trade than always selling variance, with $t$ below 1. The check also uses 22-day forecasts, not the 1- and 5-day forests that pass the accuracy test (Section 8.4).
 - **The success is narrow.** It holds for the main SPY target at short horizons and on market-feature sets only. It fails for ES and at 22 days, where HAR remains the forecast to beat, consistent with Kılıç (2026).
 - **Informative forecasts.** Against the Persistence floor, HAR and the set-A elastic net are informative at every horizon for both targets. The forecasts that fail to beat Persistence are models on the richer sets B–D, above all at 22 days, and the ES set-A forest at 1 and 5 days.
+
+**Multiple testing (Holm).** The scorecard reads each p-value on its own, but the locked test reports 48 DM tests of a machine-learning forecast against HAR (EN and RF × four sets × three horizons × two targets). We applied the Holm (1979) step-down correction to the one-sided QLIKE p-values in `loss_*.csv`: sort the $m$ p-values, multiply the $i$-th smallest by $m-i+1$, and keep the running maximum. The correction was added after the test. `evaluation/multiple_testing.m` reads the saved tables and writes `holm_ml_vs_har.csv`, `holm_scorecard.csv` and `holm_varswap.csv`; it re-estimates nothing and changes no forecast.
+
+| Forecast | Raw $p$ | Holm: all 48 tests | Holm: 6 scorecard rows | Holm: 8 ML forecasts in the same cell |
+|----------|------|------|------|------|
+| SPY $h=1$, RF C | < 0.001 | < 0.001 | < 0.001 | < 0.001 |
+| SPY $h=1$, RF B | < 0.001 | < 0.001 | — | < 0.001 |
+| SPY $h=5$, RF B | 0.006 | **0.254** | 0.028 | 0.044 |
+| SPY $h=5$, RF C | 0.071 | 1.000 | — | 0.496 |
+
+- The 1-day forest gain survives every grouping.
+- The 5-day gain survives only when the family is the six scorecard rows or the eight forecasts at that horizon. Across all 48 tests it does not.
+- Choosing the best model in each cell before testing it favours that model, so the 48-test family is the conservative reading.
 
 ## 8.11 Development versus test
 
@@ -769,8 +795,8 @@ The team kept the proposal's specification rather than add a guard after seeing 
 4. **Short ES history.** ES and set D start in 2010, so their training windows contain no crisis before 2020.
 5. **Tuning noise.** Twelve Bayesian-optimization steps with one seed make the forest's hyperparameters noisy across years.
 6. **Data gaps.** There are no limit-order-book or news-text data; ES session times are inferred; pre-December-2008 ADS is the revised vintage (training rows only).
-7. **A stylized variance-swap check.** VIX² only approximates the strike; there are no costs; trades overlap.
-8. **Many tests.** Read individual p-values together with the MCS.
+7. **A stylized variance-swap check.** VIX² only approximates the strike, and there are no costs. A trade opens every day, so positions overlap (the $t$-statistics allow for this). The check uses the 22-day forecasts only, and passing it requires only a positive correlation, not a profit (Section 8.4).
+8. **Many tests.** The locked test runs 48 ML-versus-HAR tests. A Holm correction keeps the 1-day SPY forest gains but not the 5-day one (Section 8.10). Read individual p-values together with that correction and the MCS.
 9. **Hand-coded tests.** ADF and KPSS are coded directly rather than taken from the Econometrics Toolbox. They reproduce the textbook behaviour on simulated white noise and random walks.
 10. **An earlier look at two benchmarks.** Before the team adopted a single pipeline, a standalone HAR script also scored HAR and Persistence on 2018–2026 (20 October 2026). Neither benchmark has tuning parameters, and no design choice used those numbers.
 
@@ -795,7 +821,7 @@ All code is one MATLAB pipeline in `Code/` (MATLAB R2026a with the Statistics an
 | Elastic net | `models/fit_en.m` (`lasso` with Alpha, plus closed-form ridge) |
 | Random forest | `models/fit_rf.m` (`TreeBagger`, `bayesopt`) |
 | Walk-forward and scenarios | `models/walk_forward.m`, `run_job.m`, `data/make_spec.m` (main and robustness scenarios), `rv_config.m` (every setting and the test lock) |
-| Evaluation and explanation | `evaluation/evaluate_phase.m`, `qlike.m`, `dm_test.m`, `mcs.m`; `evaluation/explain_rf.m` (Shapley, ALE) |
+| Evaluation and explanation | `evaluation/evaluate_phase.m`, `qlike.m`, `dm_test.m`, `mcs.m`; `evaluation/multiple_testing.m`, `holm.m` (Holm corrections from the saved tables); `evaluation/explain_rf.m` (Shapley, ALE) |
 | Drivers and report | `run_parallel.sh`, `main.m`; `evaluation/report_figures.m`, `Report/build_report.py` |
 
 **How to run.**
@@ -870,6 +896,8 @@ Diebold, F. X., & Mariano, R. S. (1995). Comparing predictive accuracy. *Journal
 Hansen, P. R., Lunde, A., & Nason, J. M. (2011). The model confidence set. *Econometrica*, 79(2), 453–497.
 
 Harvey, D., Leybourne, S., & Newbold, P. (1997). Testing the equality of prediction mean squared errors. *International Journal of Forecasting*, 13(2), 281–291.
+
+Holm, S. (1979). A simple sequentially rejective multiple test procedure. *Scandinavian Journal of Statistics*, 6(2), 65–70.
 
 Kılıç, R. (2026). Linear and nonlinear econometric models against machine learning models: Realized volatility prediction. Finance and Economics Discussion Series 2025-061r1, Board of Governors of the Federal Reserve System.
 
@@ -991,6 +1019,7 @@ Status key:
 | `.../shap_*.csv`, `ale_*.png` | Shapley values and ALE plots for the last-fold forest |
 | `.../stationarity.csv`, `long_memory_*.csv`, `long_memory_acf.png` | ADF/KPSS diagnostics with development $d^*$; long-memory estimates and memory in forecast errors |
 | `.../success_criterion.csv`, `loss_ratios_vs_HAR.csv` | Success scorecard (with Persistence floor); every loss ratio in one table |
+| `.../holm_ml_vs_har.csv`, `holm_scorecard.csv`, `holm_varswap.csv` | Holm-adjusted p-values: every ML forecast vs HAR (QLIKE and one-sided MSE), the scorecard rows, the variance-swap timing rules |
 | `Output/tables/audit_*.csv` | Missing-data counts, the test-origin table of proposal 3.2 and the Risk Lab vs Oxford-Man cross-check |
 | `Output/logs/` | One log per MATLAB job |
 

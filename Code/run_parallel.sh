@@ -44,7 +44,7 @@ done | xargs -P "$JOBS" -n 3 zsh -c '
 
 # 2. tables for each scenario
 for S in $SCENARIOS; do echo "$S"; done | xargs -P "$JOBS" -n 1 zsh -c '
-  "$MATLAB" -nodisplay -batch "addpath(genpath(\"$CODE\")); evaluate_phase(\"$PHASE\", \"$1\")" \
+  "$MATLAB" -nodisplay -batch "addpath(genpath(\"$CODE\")); evaluate_phase(\"$PHASE\", \"$1\"); multiple_testing(\"$PHASE\", \"$1\")" \
     > "$LOGS/${PHASE}_$1_evaluate.log" 2>&1 || echo "FAILED: evaluate $1"
   echo "$1 done: Output/tables/$PHASE/$1/summary.md"' _
 
