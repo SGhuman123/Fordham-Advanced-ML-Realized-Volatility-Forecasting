@@ -14,6 +14,13 @@ if strcmp(phase, 'test') && ~cfg.runLockedTest
     error(['run_job: the 2018-2026 test is locked. Freeze the design, then set ' ...
            'cfg.runLockedTest = true in rv_config.m.']);
 end
+if strcmp(phase, 'test')
+    fcFile = fullfile(cfg.outDir, 'forecasts', phase, scenario, sprintf('%s_h%d.mat', target, h));
+    if isfile(fcFile)
+        error(['run_job: locked-test forecasts already exist (%s); refusing to ' ...
+               'overwrite. The test is run once.'], fcFile);
+    end
+end
 maxNumCompThreads(2);
 
 spec = make_spec(target, scenario);
