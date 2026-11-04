@@ -24,7 +24,8 @@ export_design;
 
 % Robustness checks (Section 6)
 robust = {'rolling', {'SPY','ES'}; 'rv15', {'SPY'}; 'qmle', {'SPY'}; 'strict', {'SPY'}; 'rv1', {'ES'}; ...
-          'rk', {'ES'}; 'holdrop', {'ES'}; 'oxford', {'SPY'}; 'vix1996', {'SPY'}; 'rfdefault', {'SPY','ES'}; 'ffdlags', {'SPY','ES'}};
+          'rk', {'ES'}; 'holdrop', {'ES'}; 'oxford', {'SPY'}; 'vix1996', {'SPY'}; 'rfdefault', {'SPY','ES'}; 'ffdlags', {'SPY','ES'}; ...
+          'eslag1', {'SPY','ES'}};
 for r = 1:size(robust, 1)
     for target = robust{r, 2}
         for h = cfg.horizons

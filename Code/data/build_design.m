@@ -23,6 +23,12 @@ function Dz = build_design(P, spec, cfg)
 %   tightens both to "no missing day at all" for the target series.
 %   Dz.source / Dz.shift record each feature's source file and publication
 %   shift in sessions (written out by export_design).
+%
+%   spec.esLag (robustness scenario 'eslag1'): every ES-derived input, and an
+%   ES target's own history, is lagged by spec.esLag sessions so that a 16:00 ET
+%   origin uses only completed ES sessions. Targets are unchanged. Dz.rv is the
+%   target series as seen at the origin (Persistence, floors); with esLag = 0 it
+%   is the target series itself.
 
 if spec.strict
     cfg.maxMissFrac = 0;   % drop any target window that touches a missing day
@@ -59,15 +65,21 @@ names = {};  group = {};  source = {};  shift = [];  X = zeros(N, 0);
 tsrc = target_source(spec);
 
 mf = cfg.lagMinFrac;
+esLag = spec.esLag;
+lagA  = 0;                       % publication shift of the target's own history
+rvSeen = rv;
+if strcmp(spec.target, 'ES') && esLag > 0
+    lagA = esLag;  rvSeen = lagk(rv, esLag);
+end
 
 % ---- A: HAR lags (eq. 4) -------------------------------------------------------
-rvM = rollmean(rv, 22, mfA);
-add('rv_d', rv,                  'A', tsrc, 0);
-add('rv_w', rollmean(rv, 5, mfA),'A', tsrc, 0);
-add('rv_m', rvM,                 'A', tsrc, 0);
+rvM = rollmean(rvSeen, 22, mfA);
+add('rv_d', rvSeen,                  'A', tsrc, lagA);
+add('rv_w', rollmean(rvSeen, 5, mfA),'A', tsrc, lagA);
+add('rv_m', rvM,                     'A', tsrc, lagA);
 
 % ---- L: log RV of the target (FFD-lags robustness variant, proposal v5.4 4.3) --------
-add('log_rv', log(rv), 'L', tsrc, 0);
+add('log_rv', log(rvSeen), 'L', tsrc, lagA);
 
 % ---- B: market (as of the close of day t) ---------------------------------------
 rneg = min(P.spx_ret, 0);
@@ -115,25 +127,25 @@ add('gap_days_next', gap,                                  'C', 'NYSE calendar',
 % ---- D: ES measures (holiday rows merged, or dropped for robustness) ----------------
 sfx = '';
 if strcmp(spec.esHoliday, 'drop'), sfx = '_nohol'; end
-es  = @(v) P.(['es_' v sfx]);
+es  = @(v) lagk(P.(['es_' v sfx]), esLag);   % lag > 0 only in scenario 'eslag1'
 rv5 = es('rv5');  bv5 = es('bv5');
 J   = posPart(rv5 - bv5);        % eq. 3 (NaN stays NaN)
 Cc  = rv5 - J;
-add('es_C_d', Cc,                    'D', 'VOLARE ES', 0);
-add('es_C_w', rollmean(Cc, 5, mf),   'D', 'VOLARE ES', 0);
-add('es_C_m', rollmean(Cc, 22, mf),  'D', 'VOLARE ES', 0);
-add('es_J_d', J,                     'D', 'VOLARE ES', 0);
-add('es_J_w', rollmean(J, 5, mf),    'D', 'VOLARE ES', 0);
-add('es_J_m', rollmean(J, 22, mf),   'D', 'VOLARE ES', 0);
-add('es_rsp_d', es('rsp5'),                  'D', 'VOLARE ES', 0);
-add('es_rsn_d', es('rsn5'),                  'D', 'VOLARE ES', 0);
-add('es_rsp_w', rollmean(es('rsp5'), 5, mf), 'D', 'VOLARE ES', 0);
-add('es_rsn_w', rollmean(es('rsn5'), 5, mf), 'D', 'VOLARE ES', 0);
-add('es_sqrtrq_rv', sqrt(es('rq5')) .* rv5,  'D', 'VOLARE ES', 0);
-add('es_rk_d',  es('rk'),                    'D', 'VOLARE ES', 0);
-on = posPart(rv5 - P.rv_spy);                % overnight variance max(ES - SPY, 0)
-add('overnight_d', on,                       'D', 'VOLARE ES rv5; Risk Lab SPY rv5', 0);
-add('overnight_w', rollmean(on, 5, 0.6),     'D', 'VOLARE ES rv5; Risk Lab SPY rv5', 0);
+add('es_C_d', Cc,                    'D', 'VOLARE ES', esLag);
+add('es_C_w', rollmean(Cc, 5, mf),   'D', 'VOLARE ES', esLag);
+add('es_C_m', rollmean(Cc, 22, mf),  'D', 'VOLARE ES', esLag);
+add('es_J_d', J,                     'D', 'VOLARE ES', esLag);
+add('es_J_w', rollmean(J, 5, mf),    'D', 'VOLARE ES', esLag);
+add('es_J_m', rollmean(J, 22, mf),   'D', 'VOLARE ES', esLag);
+add('es_rsp_d', es('rsp5'),                  'D', 'VOLARE ES', esLag);
+add('es_rsn_d', es('rsn5'),                  'D', 'VOLARE ES', esLag);
+add('es_rsp_w', rollmean(es('rsp5'), 5, mf), 'D', 'VOLARE ES', esLag);
+add('es_rsn_w', rollmean(es('rsn5'), 5, mf), 'D', 'VOLARE ES', esLag);
+add('es_sqrtrq_rv', sqrt(es('rq5')) .* rv5,  'D', 'VOLARE ES', esLag);
+add('es_rk_d',  es('rk'),                    'D', 'VOLARE ES', esLag);
+on = posPart(rv5 - lagk(P.rv_spy, esLag));   % overnight variance max(ES - SPY, 0)
+add('overnight_d', on,                       'D', 'VOLARE ES rv5; Risk Lab SPY rv5', esLag);
+add('overnight_w', rollmean(on, 5, 0.6),     'D', 'VOLARE ES rv5; Risk Lab SPY rv5', esLag);
 
 % ---- O: Oxford-Man SPX jump / semivariance features (robustness, to Feb 2022) -------
 Jo = posPart(P.om_rv5 - P.om_bv);  Co = P.om_rv5 - Jo;
@@ -150,7 +162,7 @@ add('log_vix_only', log(vix), 'V', 'Cboe VIX', 0);
 
 X(isinf(X)) = NaN;
 
-Dz.dates = dates;   Dz.rv = rv;   Dz.lastValid = lastValid;
+Dz.dates = dates;   Dz.rv = rvSeen;   Dz.lastValid = lastValid;
 Dz.Y = Y;           Dz.tEnd = tEnd;
 Dz.X = X;           Dz.names = names;   Dz.group = group;
 Dz.source = source;  Dz.shift = shift;
