@@ -407,7 +407,7 @@ All scores are strictly out of sample and computed on the same origins for every
 | Significance | Diebold–Mariano tests with Newey–West variance and HLN correction, against HAR and against Persistence; Model Confidence Set at 10% over Persistence, HAR, EN and RF (Hansen, Lunde & Nason, 2011) |
 | Attribution | Loss ratios vs HAR and vs Persistence by feature set and horizon; RF-minus-EN change in loss from set A to B, C and D (RQ2); calm vs high-RV regimes; normal vs extreme days; stress episodes |
 | Economic value | Realized utility of a volatility-targeting rule (Bollerslev et al., 2018); stylized variance-swap P&L vs VIX² |
-| Robustness | Rolling window; Risk Lab 15-min and QMLE; ES rv1 / kernel / holiday-drop; Oxford-Man pre-2010 jump features; 1996 VIX-only start; FFD-lag variant; untuned forest |
+| Robustness | Rolling window; Risk Lab 15-min and QMLE; ES rv1 / kernel / holiday-drop; Oxford-Man pre-2010 jump features; 1996 VIX-only start; FFD-lag variant; untuned forest; 16:00 origin with ES inputs lagged (added after the test) |
 
 **Losses.** With forecast $\hat y_t$ of realized variance $y_t$ over $T$ days, the two losses are (Patton, 2011):
 
@@ -720,12 +720,20 @@ Each check reruns the frozen walk-forward on the test with one change. The table
 | FFD-lag variant (ML lag block = FFD log RV) | SPY RF CL **0.84** ✓†; ES RF CL 0.97 ✓† | SPY RF BL **0.88** ✓†, RF CL **0.89** ✓† | SPY EN BL 0.97 ✓; ES ≥ 1.13 |
 | Oxford-Man jump features, SPY 2018–2021 ($n\approx970$) | RF C+OM **0.87** ✓† vs RF C **0.92** ✓† | RF C 0.97 ✓† | EN C 0.99 ✓ |
 | 1996 start, HAR lags + log VIX | RF A+VIX **0.89** ✓†, RF A **0.93**† | RF A+VIX **0.90** ✓† | EN A+VIX 1.00 ✓ |
+| 16:00 origin, ES inputs lagged one session, SPY (sets A, D; added after the test) | RF D 0.96 ✓† | every set-D forecast ≥ 1.11 | EN D 1.25 ✓ |
+| 16:00 origin, ES inputs lagged one session, ES (added after the test) | RF B **0.73** ✓†, RF D **0.74** ✓†, RF C **0.76** ✓† | RF C 0.90 ✓† | EN A 0.99 ✓† |
 
 What the checks show:
 
 - **The SPY short-horizon result is robust where the training history includes 2008.** The 1-day forest gain over HAR (0.83–0.89) survives the alternative SPY targets (15-min RV, QMLE), the strict missing-day rule, untuned forests, FFD lags and the 1996 start. At 5 days it survives 15-min RV, the strict rule, FFD lags and the 1996 start.
 - **It weakens with a rolling window.** A 10-year rolling window drops 2008 from SPY training after the 2018 re-fit, and the 1-day forest gain shrinks to 0.93, no longer significant. This is the same training-history effect as the COVID failure (Section 8.5).
 - **ES: no check produces a significant gain over HAR, with one exception.** The untuned forest on set D (0.91 at 1 day) does, which suggests that the tuned ES forests were over-fitted to calm validation years. The alternative ES targets, the holiday-row treatment and the rolling window change nothing material.
+- **The ES forecast-time convention matters for ES at 1 day.** This check was added after the test, following the instructor's comments; Section 5 explains the two conventions. With a 16:00 origin, every ES-derived input is lagged one session (scenario `eslag1`).
+  - **ES HAR is hit hardest.** It can then use only the previous day's ES session, and its 1-day QLIKE rises by 39% (0.193 to 0.268).
+  - **The forests are hit less.** On sets B–D they still see the day's market close (returns, range, implied volatility), so they now beat this weaker HAR significantly at 1 day (0.73–0.76, $p\le0.0005$).
+  - **In absolute terms nothing improves.** The best 16:00 forecast (RF B, QLIKE 0.195) is no more accurate than HAR at the 17:00 origin (0.193).
+  - **At 5 and 22 days no ES forecast beats HAR** under either convention.
+  - **SPY is unaffected** apart from set D, whose forecasts still do not beat HAR (1 day 0.96, $p=0.27$). The winning SPY forests use sets B and C, which contain no ES input.
 - **22 days: no check produces a forecast that beats HAR.** Persistence is 1.3–1.7 times worse than HAR in every scenario.
 - **The strict missing-day rule** removes about a quarter of SPY origins but leaves the conclusions unchanged, so the frozen 80%/20% rules are not driving the results.
 - **FFD lags:** the forest is again indifferent to raw or FFD lags, while the elastic net on FFD log RV alone is 1.1–2.0 times worse than HAR. Keeping the raw HAR lags matters for the linear model.
@@ -1002,6 +1010,7 @@ Status key:
 | FFD with the smallest $d$ passing ADF, chosen inside each training window; $\tau$ and grid fixed in advance; $d^*$ and retained correlation reported (§4.3) | Done | `ffd.m`, `ffd_choose.m`, `walk_forward.m`, `ffd_*.csv` |
 | Target never transformed; raw HAR lags kept in both ML models (§4.3) | Done | `walk_forward.m` |
 | FFD variant replacing the ML lag block with FFD log RV (§4.3) | Done | scenario `ffdlags` |
+| Forecast-time convention for ES inputs (instructor's comments, 1 Nov 2026) | Done after the test: origin stated as 17:00 ET (§5); 16:00 variant as robustness | scenario `eslag1` |
 | Elastic net: $\alpha$ and $\lambda$ tuned; ridge and lasso special cases; coefficients reported (§4.6) | Done | `fit_en.m`, `explain_*.csv` |
 | Random forest; impurity importance (§4.7) | Done | `fit_rf.m` |
 | Excluded models not estimated (§4.8) | Done | — |
