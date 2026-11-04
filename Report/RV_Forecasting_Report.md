@@ -791,7 +791,7 @@ The team kept the proposal's specification rather than add a guard after seeing 
 5. **Tuning noise.** Twelve Bayesian-optimization steps with one seed make the forest's hyperparameters noisy across years.
 6. **Data gaps.** There are no limit-order-book or news-text data; ES session times are inferred; pre-December-2008 ADS is the revised vintage (training rows only).
 7. **A stylized variance-swap check.** VIX² only approximates the strike; there are no costs; trades overlap.
-8. **Many tests.** Read individual p-values together with the MCS.
+8. **Many tests.** Read individual p-values together with the MCS. As a check, Holm–Bonferroni adjustment of the one-sided RQ2 QLIKE p-values (family: the three set steps per target and horizon; `Code/evaluation/holm_rq2_check.m`) leaves every 5% result unchanged: all 1- and 5-day gains stay significant (adjusted p ≤ 0.004) except ES 5-day A→D (0.098, not significant before adjustment either), and no 22-day gain is significant (adjusted p ≥ 0.19).
 9. **Hand-coded tests.** ADF and KPSS are coded directly rather than taken from the Econometrics Toolbox. They reproduce the textbook behaviour on simulated white noise and random walks.
 10. **An earlier look at two benchmarks.** Before the team adopted a single pipeline, a standalone HAR script also scored HAR and Persistence on 2018–2026 (20 October 2026). Neither benchmark has tuning parameters, and no design choice used those numbers.
 
