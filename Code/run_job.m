@@ -14,6 +14,10 @@ if strcmp(phase, 'test') && ~cfg.runLockedTest
     error(['run_job: the 2018-2026 test is locked. Freeze the design, then set ' ...
            'cfg.runLockedTest = true in rv_config.m.']);
 end
+if strcmp(phase, 'test') && strcmp(scenario, 'boost') && ~cfg.gb.allowTest
+    error(['run_job: boosting is exploratory and development-only; running it on the ' ...
+           'locked test needs a team decision (cfg.gb.allowTest).']);
+end
 maxNumCompThreads(2);
 
 spec = make_spec(target, scenario);
@@ -22,14 +26,23 @@ P    = load_panel(cfg);
 Dz   = build_design(P, spec, cfg);
 
 R = struct();
+if ~isempty(spec.reuse)                                % e.g. 'boost': copy the saved main forecasts
+    src = fullfile(cfg.outDir, 'forecasts', phase, spec.reuse, sprintf('%s_h%d.mat', target, h));
+    if ~isfile(src)
+        error('run_job: %s needs the saved %s forecasts first (%s).', scenario, spec.reuse, src);
+    end
+    S0 = load(src, 'R');  R = S0.R;
+end
 for s = spec.sets
     setName = s{1};
     years = phase_years(spec, setName, phase, cfg);
-    models = {'EN','RF'};
+    models = spec.mlModels;
     if spec.rfDefault, models = {'RF'}; end            % only the forest changes
     if strcmp(setName, 'A')
         if ~spec.mlOnA, models = {}; end
-        models = [{'PER','HAR'}, models];              % Persistence and HAR live on set A
+        if isempty(spec.reuse)
+            models = [{'PER','HAR'}, models];          % Persistence and HAR live on set A
+        end
     end
     for m = models
         t0 = tic;

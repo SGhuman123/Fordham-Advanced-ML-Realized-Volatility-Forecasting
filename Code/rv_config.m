@@ -46,6 +46,16 @@ cfg.rf.maxEvals   = 12;
 cfg.rf.maxLeaf    = 200;
 cfg.rf.useDefaults = false; % true: Breiman defaults (robustness scenario 'rfdefault')
 
+% Gradient boosting (LSBoost), EXPLORATORY and post-freeze (Udler, Nov 2026):
+% scenario 'boost' only, development period only. Restrained grid; the number
+% of trees is chosen by validation QLIKE on the last two training years.
+cfg.gb.maxNumSplits = [3 7 15 31];
+cfg.gb.learnRate    = [0.01 0.05 0.1];
+cfg.gb.minLeafSize  = [5 20 50];
+cfg.gb.maxIter      = 1000;
+cfg.gb.iterStep     = 20;      % validation checkpoints for the number of trees
+cfg.gb.allowTest    = false;   % 'boost' on the 2018-2026 test needs a team decision
+
 % Evaluation (Section 6)
 cfg.mcs.alpha   = 0.10;
 cfg.mcs.B       = 5000;    % moving-block bootstrap, block length floor(sqrt(T)) (Kilic, 2026)

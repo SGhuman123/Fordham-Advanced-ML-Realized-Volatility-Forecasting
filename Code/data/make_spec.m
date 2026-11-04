@@ -19,6 +19,10 @@ function spec = make_spec(target, scenario)
 %                      origin whose target or 22-day lag window touches a missing
 %                      Risk Lab day, instead of the 80% / 20% rules. Development
 %                      has no missing SPY day, so it changes only the test
+%   boost      SPY/ES  EXPLORATORY: adds gradient boosting (GB, fit_gb) on sets A-D.
+%                      PER/HAR/EN/RF are copied from the saved 'main' forecasts of
+%                      the same phase, so only GB is estimated; output goes to its
+%                      own folder (forecasts/<phase>/boost), main is untouched
 
 spec.target        = target;
 spec.scenario      = scenario;
@@ -30,10 +34,14 @@ spec.rfDefault     = false;
 spec.strict        = false;    % strict missing-day rule (scenario 'strict')
 spec.mlOnA         = true;     % EN and RF also run on set A
 spec.sets          = {'A','B','C','D'};
+spec.mlModels      = {'EN','RF'};   % ML models estimated on every set
+spec.reuse         = '';            % scenario whose saved forecasts are copied in
 robustSets         = {'A','C','D'};
 
 switch scenario
     case 'main'
+    case 'boost'
+        spec.mlModels = {'GB'};  spec.reuse = 'main';
     case 'rolling'
         spec.window = 'rolling';  spec.sets = robustSets;
     case {'rv15','qmle'}
