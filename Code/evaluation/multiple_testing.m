@@ -29,8 +29,8 @@ for target = {'SPY','ES'}
         L = readtable(f, 'TextType', 'string');
         L = L(ismember(L.model, ["EN","RF"]), :);
         p1MSE = tcdf(-L.DM_MSE, L.n - 1);
-        cellQ = holm(L.p1_QLIKE);
-        cellM = holm(p1MSE);
+        cellQ = holm_adjust(L.p1_QLIKE);
+        cellM = holm_adjust(p1MSE);
         T = [T; table(repmat(string(target{1}), height(L), 1), repmat(h, height(L), 1), ...
             L.model + "_" + L.set, L.n, L.QLIKE_ratio, L.p1_QLIKE, cellQ, ...
             L.MSE_ratio, L.p_MSE, p1MSE, cellM, L.inMCS_QLIKE, L.inMCS_MSE, ...
@@ -41,8 +41,8 @@ end
 if isempty(T)
     error('multiple_testing: no loss_*.csv in %s; run evaluate_phase first.', tabDir);
 end
-T.holm_all_QLIKE = holm(T.p1_QLIKE);
-T.holm_all_MSE   = holm(T.p1_MSE);
+T.holm_all_QLIKE = holm_adjust(T.p1_QLIKE);
+T.holm_all_MSE   = holm_adjust(T.p1_MSE);
 T = movevars(T, 'holm_all_QLIKE', 'After', 'holm_cell_QLIKE');
 T = movevars(T, 'holm_all_MSE', 'After', 'holm_cell_MSE');
 writetable(T, fullfile(tabDir, 'holm_ml_vs_har.csv'));
@@ -50,7 +50,7 @@ writetable(T, fullfile(tabDir, 'holm_ml_vs_har.csv'));
 % ---- 2. the success-criterion scorecard ------------------------------------------
 S = readtable(fullfile(tabDir, 'success_criterion.csv'), 'TextType', 'string');
 S = S(:, {'target','h','best_ML','QLIKE_ratio','p1_vs_HAR'});
-S.holm_scorecard = holm(S.p1_vs_HAR);
+S.holm_scorecard = holm_adjust(S.p1_vs_HAR);
 [~, k] = ismember(S.target + "|" + S.h + "|" + S.best_ML, T.target + "|" + T.h + "|" + T.forecast);
 S.holm_cell = T.holm_cell_QLIKE(k);
 S.holm_all  = T.holm_all_QLIKE(k);
@@ -68,7 +68,7 @@ for target = {'SPY','ES'}
         'VariableNames', {'target','strategy','n','pnl_cc_leg','t_cc_leg','p1_cc_leg','corr_signal_payoff'})]; %#ok<AGROW>
 end
 if ~isempty(V)
-    V.holm_all = holm(V.p1_cc_leg);
+    V.holm_all = holm_adjust(V.p1_cc_leg);
     writetable(V, fullfile(tabDir, 'holm_varswap.csv'));
 end
 

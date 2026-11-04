@@ -44,7 +44,8 @@ run once. Anything changed after that is exploratory.
 | | `models/fit_persistence.m`, `fit_har.m`, `fit_en.m`, `fit_rf.m` | Persistence (latest h-day average, not estimated); OLS HAR; elastic net (alpha in {0, 0.1, ..., 1} x 50-point lambda path, ridge in closed form); random forest (`TreeBagger`, `bayesopt` on leaf size and features per split). Tuning criterion: validation QLIKE. Linear forecasts are floored at the training minimum of daily RV |
 | 4. Evaluation | `evaluation/evaluate_phase.m` | MSE, QLIKE, MAE, OOS R^2, floor frequency; DM vs HAR and Persistence; MCS; RQ1 and RQ2 tables; regimes, extreme days and stress episodes; utility; variance swap; success criterion; EN coefficients, RF importance, HAR coefficients, FFD orders |
 | | `evaluation/dm_test.m`, `mcs.m`, `qlike.m` | Diebold-Mariano (Newey-West + HLN); Model Confidence Set (T_max, block bootstrap); QLIKE |
-| | `evaluation/multiple_testing.m`, `holm.m` | Holm corrections read from the saved tables (nothing re-estimated): every EN / RF forecast vs HAR on QLIKE and one-sided MSE, the success-criterion rows and the variance-swap timing rules (`holm_*.csv`) |
+| | `evaluation/multiple_testing.m`, `holm_adjust.m` | Holm corrections read from the saved tables (nothing re-estimated): every EN / RF forecast vs HAR on QLIKE and one-sided MSE, the success-criterion rows and the variance-swap timing rules (`holm_*.csv`) |
+| | `evaluation/holm_rq2_check.m` | Holm check of the RQ2 p-values (three set steps per target and horizon); prints only |
 | | `evaluation/explain_rf.m` | Shapley values and ALE for the last-fold random forest |
 | | `evaluation/report_figures.m` | Pipeline and walk-forward diagrams for the report |
 
