@@ -296,7 +296,9 @@ Target at day t = the **average RV over the next h days**, RV_{t+1:t+h}.
 
 - **HAR and Persistence** use set A only. **EN and RF** use all four sets.
 - The ML models **always keep the raw HAR lags**, so they nest HAR.
-- **Late-starting series** (VVIX 2006, VIX3M 2009, ES 2009, VIX9D 2011) enter a fold once they have 3 years of history.
+- **Late-starting series** (VVIX 2006, VIX3M 2009, ES 2009, VIX9D 2011) enter a fold once they have 3 years of non-missing training data. From then on, **every missing row, including all rows before the series began, is filled with the training-window median** (report §3.2).
+  - For SPY sets B and C (trained from 2005), the VIX3M and VIX9D spreads are therefore one constant value through 2005–2009/2010, including the 2008 crisis: 36% / 46% of training rows at the first test re-fit, 23% / 29% at the last.
+  - Raw data before a series starts are unavailable; it is the *model input* that gets the median.
 - The full list, with sources and lags, is in report Appendix A and in `Output/data/feature_dictionary.csv`.
 
 ### 5.3 Stationarity step (new in v5.4)
@@ -655,6 +657,8 @@ QLIKE ratio vs HAR; the best one or two forecasts per cell, plus Persistence.
 | 2022 bear market | RF C 0.66, EN B/C 0.66 | EN B 0.72 | RF B 0.68, RF C 0.70 | RF C 0.83, RF D 0.86 |
 | April 2025 tariffs | RF D 0.41, RF C 0.42 | EN D 0.52, RF D 0.58 | RF D 0.53, RF B 0.56 | EN B/C 0.82 |
 
+**Caveat on the SPY Feb 2018 row:** Risk Lab is missing 5–9 Feb 2018, the spike week itself. The SPY row uses only **17 days (1 day) and 14 days (22 days)** of the episode's 43 sessions, none from the spike week, so it doesn't fully represent the episode. ES is unaffected (43 days).
+
 - **At 1 day, ML beats HAR on extreme days and in stress episodes.** For SPY the best forests halve HAR's loss on extreme days (0.51) and in April 2025, and cut it by a third in 2022. That is the opposite of Rahimikia & Poon's single-stock finding.
 - **The COVID failure is a training-history failure.** Every model whose training starts in 2010 (all ES models and SPY set D) never saw a crisis like 2008. In March 2020 these forests were 2.3–4.5× worse than HAR. The SPY forests on sets B and C, trained from 2005 and so through 2008, beat HAR in the same episode (0.72–0.80). A forest can't forecast above the range it was trained on. (An earlier v5.2 configuration with a 3-year burn-in showed the same weakness in 2008: forests trained only on calm 2005–2007 badly under-forecast the crisis.)
 - **Persistence is poor everywhere except the first days of a spike,** where it reacts fastest.
@@ -680,12 +684,14 @@ Realized utility in % per year (maximum 4.00).
 
 Averaged over the nine test re-fits:
 
-- **Forest, 1 day (set D):** the VIX9D − VIX spread dominates for both targets (27% of importance), then the weekly negative-return average (10–12%), ES continuous variation (8–9%) and ES negative semivariance (8–9%).
+- **The winning SPY forests (sets B and C, 1 and 5 days) are driven by the IV term slope** `iv_term` (ATM IV 1Y − 1M): 37–39% of importance at 1 day, 31–33% at 5 days. Then today's RV, the weekly negative-return average and Nasdaq implied vol (log VXN). The VIX9D and VIX3M spreads get under 1%.
+- **Forests trained from 2010 (SPY set D; ES sets B–D), 1 day:** the VIX9D − VIX spread leads instead (26–27%). In set D it's followed by the weekly negative-return average (10–12%), ES continuous variation (8–9%) and ES negative semivariance (8–9%). None of these forests significantly beats HAR.
+- **Why the difference:** VIX9D starts in 2011, and before that the spread is median-filled (see late starts, Section 5.2). That's one year for models trained from 2010 but six years, including 2008, for SPY B/C, so those forests rely on the term slope (observed from 2005) instead. Importance partly reflects data coverage, not just economics.
 - **Forest, 22 days (set D):** the IV term slope leads (9–10%), then cross-market implied vol (log VXN) and negative-return averages.
 - **Elastic net, set D:**
   - 1 day: the Parkinson range, the weekly negative-return average, the VIX9D spread, ES negative semivariance and the VRP, selected in every re-fit;
   - 22 days: the VIX3M − VIX spread has the largest coefficient (negative), then the 1-month IV skew and the weekly ES jump average.
-- **Does implied vol help?** Yes, mainly through the **shape** of the term structure (VIX9D and VIX3M spreads, term slope) and the skew, not its level. Macro, stress and calendar features rank at the bottom.
+- **Does implied vol help?** Yes, mainly through the **shape** of the term structure and the skew, not its level. For the winning SPY forests the shape enters through the IV term slope; for forests trained from 2010 through the VIX9D spread; for the EN through the VIX3M spread. Macro, stress and calendar features rank at the bottom.
 - **HAR coefficients** are stable (total persistence 0.88–0.92 at 1 day). After 2020 the weight moves from the monthly lag to the weekly lag.
 - **FFD in the test re-fits:** the 10Y yield and the 10Y − 3M spread are differenced in every re-fit (d\* 0.10–0.40, retained correlation 0.96–0.97), and ATM 1Y IV in a third of them. Every other input passes ADF undifferenced.
 - **Shapley values** for the last test re-fit (forest on set D, 22 days, forecasting 2026) agree with the importance ranking: the IV term slope leads for both targets, then log VXN and the monthly negative-return average. **ALE plots** are steep at low values and flat beyond the training range: the forest can't extrapolate (report Section 8.7, Figure 6).
@@ -789,7 +795,7 @@ Also new in v5.4: **López de Prado (2018), ch. 5**, the source of the fractiona
 How our test results relate:
 
 - **Christensen et al.:** like them, with volatility history alone ML does no better than HAR. Unlike them, our gains don't grow with the horizon. Under MSE our 22-day SPY ratios with covariates (0.86–0.92) are in their range but not significant over nine years of one index; they forecast 29 stocks and refit daily.
-- **Kılıç: closest to us.** ML gains are concentrated at short horizons, they are modest, and macro predictors add nothing. Our 1-day SPY gain (12–15% QLIKE) is larger than Kılıç's (about 1%), which we put down to the implied-vol term-structure features that paper doesn't use. They are the forest's most important inputs.
+- **Kılıç: closest to us.** ML gains are concentrated at short horizons, they are modest, and macro predictors add nothing. Our 1-day SPY gain (12–15% QLIKE) is larger than Kılıç's (about 1%), which we put down to the implied-vol term-structure features that paper doesn't use. The 1-year minus 1-month IV slope is the winning forests' most important input (31–39% of importance).
 - **Rahimikia & Poon:** at 1 day our forests do much *better* than HAR on extreme days (0.51 for SPY), the opposite of their finding. Index RV is smoother than single-stock RV, and our models see the implied-vol term structure, which moves before realized volatility. At 22 days extreme days stay hard for every model, as they find.
 - **The practical lesson from 2020:** a tree-based volatility model needs at least one crisis in its training window, or it should be blended with a model that can extrapolate.
 
@@ -963,7 +969,7 @@ Collinear implied-vol levels plus almost no penalty give offsetting coefficients
 At 1 and 5 days the DiD is significant for both targets, but often because the EN gets worse. The clean cases are SPY 5 days A→B and ES 1 day A→D, where the forest gains clearly more.
 
 **Q: Does implied volatility help?**
-Yes, through its **shape** more than its level. The VIX9D − VIX spread is the forest's top input at 1 day (27% of importance), the IV term slope leads at 22 days, and VIX3M − VIX has the EN's largest 22-day coefficient.
+Yes, through its **shape** more than its level. The IV term slope (1Y − 1M) is the winning SPY forests' top input (31–39% of importance at 1 and 5 days). The VIX9D − VIX spread leads only in forests trained from 2010 (27%, none of them winners), partly because it is median-filled before 2011 in the longer SPY training windows. VIX3M − VIX has the EN's largest 22-day coefficient.
 
 **Q: Does the ES target help for variance swaps (RQ3)?**
 No. ES-target signals line up worse with the swap payoff than SPY-target ones on the test, mainly because the ES models under-forecast the 2020 spike.
@@ -1052,7 +1058,8 @@ No substantive deviations. The choices the proposal left open (missing days, ES 
 | Test: SPY 1-day R² | HAR 0.53 → RF C 0.67 |
 | Test: always sell variance | +70.7 (SPY) / +68.1 (ES) vol-pts² per trade, t ≈ 1 |
 | Test: utility | HAR +0.1–0.6 pp/yr over Persistence; best ML +0.06–0.08 pp/yr over HAR (SPY 1 and 5 days) |
-| Test: top forest input (1 day) | VIX9D − VIX spread, 27% of importance |
+| Test: winning SPY forests' top input | IV term slope (1Y − 1M), 31–39% of importance |
+| Test: top input in forests trained from 2010 (1 day) | VIX9D − VIX spread, 26–27% |
 | Development: 1-day forest vs HAR | 18–30% better (SPY), 13–39% (ES) |
 | Stationarity tests | 74: 65 long-memory pattern, 8 unit root, 1 stationary |
 | FFD orders | d\* 0.10–0.30 (development), 0.10–0.40 (test re-fits); 96–99.5% correlation retained |
