@@ -44,12 +44,12 @@ done | xargs -P "$JOBS" -n 3 zsh -c '
 
 # 2. tables for each scenario
 for S in $SCENARIOS; do echo "$S"; done | xargs -P "$JOBS" -n 1 zsh -c '
-  "$MATLAB" -nodisplay -batch "addpath(genpath(\"$CODE\")); evaluate_phase(\"$PHASE\", \"$1\")" \
+  "$MATLAB" -nodisplay -batch "addpath(genpath(\"$CODE\")); evaluate_phase(\"$PHASE\", \"$1\"); multiple_testing(\"$PHASE\", \"$1\")" \
     > "$LOGS/${PHASE}_$1_evaluate.log" 2>&1 || echo "FAILED: evaluate $1"
   echo "$1 done: Output/tables/$PHASE/$1/summary.md"' _
 
 # 3. explanation and diagnostics for the main design
 if (( ${SCENARIOS[(Ie)main]} )); then
-  "$MATLAB" -nodisplay -batch "$INIT explain_rf('SPY',22,'D','$PHASE'); explain_rf('ES',22,'D','$PHASE'); long_memory('$PHASE'); stationarity('$PHASE'); data_audit; export_design" \
+  "$MATLAB" -nodisplay -batch "$INIT window_check('$PHASE'); utility_test('$PHASE'); explain_rf('SPY',22,'D','$PHASE'); explain_rf('ES',22,'D','$PHASE'); long_memory('$PHASE'); stationarity('$PHASE'); data_audit; export_design" \
     > "$LOGS/${PHASE}_main_explain.log" 2>&1 || echo "FAILED: explain/diagnostics"
 fi

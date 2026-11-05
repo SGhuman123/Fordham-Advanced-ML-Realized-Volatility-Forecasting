@@ -15,6 +15,9 @@ for target = {'SPY', 'ES'}
     end
 end
 evaluate_phase(phase, 'main');
+multiple_testing(phase, 'main');
+window_check(phase);
+utility_test(phase);
 explain_rf('SPY', 22, 'D', phase);
 explain_rf('ES',  22, 'D', phase);
 long_memory(phase);
@@ -32,4 +35,5 @@ for r = 1:size(robust, 1)
         end
     end
     evaluate_phase(phase, robust{r, 1});
+    multiple_testing(phase, robust{r, 1});
 end
