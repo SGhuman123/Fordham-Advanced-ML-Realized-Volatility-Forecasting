@@ -97,7 +97,7 @@ The team's cleaned inputs are read unchanged from the project's data folder; eve
 | Cboe indices | Daily VIX, VIX9D, VIX3M, VIX6M, VIX1Y, SKEW | VIX from 1990; VIX3M from Sep 2009; VIX9D from Jan 2011 | Set B (log VIX, VRP, term structure); VIX² is the variance-swap strike |
 | `features_daily.csv`: market | Daily S&P 500 OHLC and returns; Hang Seng; VVIX, VXN, VXD, RVX | 1990 – 6 Oct 2026; VVIX from Mar 2006 | Set B; Hang Seng in set C |
 | `features_daily.csv`: rates | Daily 10Y−3M spread and 10Y yield (FRED) | 1990 – Oct 2026 | Set B |
-| `features_daily.csv`: macro and stress | EPU, CISS, real-time ADS, news sentiment, GPR (daily); NFCI, STLFSI4 (weekly) | 1990 – Oct 2026; real-time ADS from Dec 2008 | Set C |
+| `features_daily.csv`: macro and stress | EPU, CISS, real-time ADS, news sentiment, classic GPR (daily; the monthly AI-GPR is not used, which proposal §5 allows); NFCI, STLFSI4 (weekly) | 1990 – Oct 2026; real-time ADS from Dec 2008 | Set C |
 | `features_daily.csv`: Fama–French | Daily factor returns, published about a month late | to Aug 2026 | Not used (not available in real time) |
 | NYSE calendar | NYSE sessions and early closes | 1990 – 6 Oct 2026 (9,258 sessions) | Master calendar for alignment and FFD; early-close flag in set C |
 
@@ -150,10 +150,10 @@ Pre-2005 Risk Lab data enter only a VIX-only robustness check.
   2. weekly and monthly RV lags are built from the observed days if at least 80% of the window is present;
      - The one exception is `overnight_w`, the 5-day average of overnight variance in set D, which is built if at least 60% of the window (3 of 5 days) is present; it was coded this way before the design freeze and is left unchanged so the locked test results match the code.
   3. an origin whose own $\mathrm{RV}_t$ is missing is dropped, for every model alike;
-  4. on a day when a daily input has no value (e.g. a bond holiday), its last published value is used for at most 5 sessions (10 for weekly series), which uses no future information.
+  4. on a day when a daily input has no value (e.g. a bond holiday), its last published value is used for at most 5 sessions (10 for weekly series), which uses no future information. This departs from proposal §3.2, which says daily series "are not forward-filled". The rule was fixed before the test and is listed in Appendix B.
 
   None of these affects the development results, because development has no missing Risk Lab days. A **strict** alternative is run as a robustness check (scenario `strict`): any origin whose target or 22-day lag window touches a missing day is dropped. On the test this removes about a quarter of the SPY 22-day origins (2,160 → 1,647).
-- **ES holiday sessions.** VOLARE has 121 rows on non-NYSE dates (abbreviated Globex holiday sessions). Their variance is rolled into the next NYSE day, so each target spans one close-to-close interval; dropping them is a robustness check (scenario `holdrop`).
+- **ES holiday sessions.** VOLARE has 121 rows on non-NYSE dates (abbreviated Globex holiday sessions). Their variance is rolled into the next NYSE day, so each target spans one close-to-close interval; dropping them is a robustness check (scenario `holdrop`). Proposal §3.2 left this treatment "pending the professor's confirmation". We asked on 16 October 2026, and the instructor's comments of 1 November did not address it, so it is still unconfirmed. The frozen treatment is kept, and dropping the rows leaves the ES conclusions unchanged (Section 8.9).
 
 ## 3.3 Limitations
 
@@ -853,8 +853,8 @@ All code is one MATLAB pipeline in `Code/` (MATLAB R2026a with the Statistics an
 |---|---|
 | Data lock (mid-October) | Done |
 | Persistence, HAR and first ML baseline (end-October) | Done |
-| Full sets A–D and ES runs (mid-November) | Done |
-| Design freeze and locked test | Done (21 October 2026) |
+| Full sets A–D and ES runs (mid-November) | Done (ahead of schedule, by 21 October 2026) |
+| Design freeze and locked test (late November) | Done on 21 October 2026, about a month earlier than planned and before the instructor's comments of 1 November; the freeze and the test ran the same evening (Section 7.3) |
 | Economic checks, final report and slides (through early December) | Report done; slides to follow |
 
 # References
@@ -963,6 +963,7 @@ Status key:
 | Horizons 1, 5, 22; target = average RV over $t{+}1{:}t{+}h$ (§4.1) | Done | `build_design.m` |
 | Main target SPY rv5 from 2005; ES second target and set D from 2010 (§3.1) | Done; Risk Lab vs Oxford-Man correlation 0.968 reproduced | `data/sample_start.m`, `data/data_audit.m` |
 | NYSE calendar alignment; weekly series held to next release (§3.2) | Done (calendar from `features_daily.csv`; the named calendar file is not in the data folder) | `data/load_panel.m` |
+| Daily series "not forward-filled" (§3.2) | **Changed:** a missing daily input carries its last published value for at most 5 sessions (10 for weekly series), frozen before the test (report §3.2, rule 4) | `data/build_design.m` (`ffill_limit`) |
 | Late starts from first date + $\ell_\tau$; common days only (§3.2) | Done for raw and FFD values. Model inputs differ: once a feature enters a fold, its rows before the start date get the training median (report §3.2) | `ffd.m`, `walk_forward.m`, `evaluate_phase.m` |
 | Missing-day counts measured (§3.2) | Done (reproduced exactly) | `data_audit.m` |
 | Missing-day treatment (§3.2: "will be decided") | Done (rules frozen before the test; strict-rule robustness) | `rv_config.m`, `data/build_design.m`; scenario `strict` |
@@ -981,7 +982,7 @@ Status key:
 | Tuning on the last two years; label gap (eq. 10) (§5) | Done | `walk_forward.m` |
 | Availability timing and publication shifts (§5) | Done | `build_design.m` |
 | Rolling 10-year (8-year ES) robustness (§5) | Done | scenario `rolling` |
-| Locked 2018–2026 test examined once (§5) | Done, after the `design-freeze` tag (early benchmark look disclosed, Section 11) | `cfg.runLockedTest`; Section 8 |
+| Locked 2018–2026 test examined once (§5) | Done, after the `design-freeze` tag, on 21 October 2026 rather than in late November as §8 planned (early benchmark look disclosed, Section 11) | `cfg.runLockedTest`; Section 8 |
 | MSE, QLIKE, MAE, OOS $R^2$ on the same origins (§6) | Done | `loss_*.csv` |
 | DM (Newey–West + HLN) against HAR and Persistence; MCS at 10% over Persistence, HAR, EN, RF (§6) | Done | `dm_test.m`, `mcs.m`, `loss_*.csv`, `rq1_*.csv` |
 | Loss ratios vs HAR and vs Persistence; RQ2 difference-in-differences (§6) | Done | `loss_ratios_vs_HAR.csv`, `rq2_*.csv` |
@@ -992,7 +993,7 @@ Status key:
 | Shapley and ALE (§8) | Done | `explain_rf.m` |
 | Code regenerates every table from the cleaned inputs (§8) | Done | `run_parallel.sh` |
 | Final report (§8) | Done | this report |
-| Slides (§8) | Optional (after the test) | — |
+| Slides (§8) | Required deliverable; in preparation after the report, for the early-December write-up deadline | — |
 | Additions from the research papers | Done | Extreme-day split (Rahimikia & Poon); RF-defaults robustness and floor reporting (Christensen et al.); MCS block length and euro-crisis window (Kılıç) |
 
 # Appendix C. Output Files
