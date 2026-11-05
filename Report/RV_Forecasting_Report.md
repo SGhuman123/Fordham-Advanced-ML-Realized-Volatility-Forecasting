@@ -135,7 +135,13 @@ Pre-2005 Risk Lab data enter only a VIX-only robustness check.
 - **Missing trading days.** We reproduced the proposal's counts exactly from the raw files (`data_audit.m`):
   - Risk Lab SPY lacks 33 of the 5,473 NYSE sessions from 3 Jan 2005 to 5 Oct 2026, all in the test period (5–9 Feb 2018 and 28 isolated days). Development has none, and ES has no missing NYSE session.
   - Within their coverage, some inputs also lack values on NYSE days: Hang Seng 251 (Hong Kong holidays), T10Y3M and DGS10 39 (bond-market holidays), VVIX 61 (59 in 2006), RVX 7, VXD 3.
-  - Targets are never filled, and ES is never a stand-in for a missing SPY target.
+  - **How missing target days are handled.** We never fill a missing target day with another source (ES or Oxford-Man) or with a model forecast.
+    - A 1-day target on a missing day is dropped.
+    - A multi-day target is the average of the observed days in its window ($\mathrm{RV}_{t+1:t+h}$ in eq. 2 is computed over those days only). This implicitly treats the missing days as equal to that average, so it is a mild form of imputation, not none.
+    - A multi-day target is dropped if more than 20% of its window is missing (rule 1 below).
+    - Every model is scored on the same origins.
+
+    The 20% rule was fixed before the test. Section 8.12 reports the results with and without it (partial versus complete windows) as a sensitivity analysis (`build_design.m`, lines 39–52).
 
 | Horizon | Test origins | Target window has a missing day | More than 20% of target window missing | 22-day lag window has a missing day |
 |----------|----------|----------|----------|----------|
@@ -624,19 +630,22 @@ QLIKE ratio vs HAR on the test; the best one or two forecasts per cell, plus Per
 
 ## 8.6 Economic value: volatility-targeting utility
 
-Realized utility (eq. 14) in % per year; the maximum is 4.00.
+Realized utility (eq. 14) in % per year; the maximum is 4.00. The two test columns give the one-sided DM $p$-value on the daily utility difference and, for the best model, the gain over HAR in basis points a year with its Holm-adjusted $p$ over the 48 ML forecasts.
 
-| Target | $h$ | Persistence | HAR | Best model |
-|-------|----|------|------|---------------------------|
-| SPY | 1 | 3.31 | 3.54 | 3.62 (RF B, RF C) |
-| SPY | 5 | 3.32 | 3.55 | 3.61 (RF B) |
-| SPY | 22 | 2.70 | 3.21 | 3.25 (EN B) |
-| ES | 1 | 3.48 | 3.61 | 3.62 (RF D) |
-| ES | 5 | 3.35 | 3.53 | 3.54 (EN D) |
-| ES | 22 | 2.40 | 3.04 | 3.05 (EN A) |
+| Target | $h$ | Persistence | HAR | HAR beats Persistence ($p$) | Best model | Best vs HAR: bp a year ($p$; Holm) |
+|-------|----|------|------|------|------------|------------------|
+| SPY | 1 | 3.31 | 3.54 | < 0.001 | 3.62 (RF C) | +8.0 (< 0.001; < 0.001) |
+| SPY | 5 | 3.32 | 3.55 | < 0.001 | 3.61 (RF B) | +6.1 (0.010; 0.47) |
+| SPY | 22 | 2.70 | 3.21 | 0.046 | 3.25 (EN B) | +4.5 (0.25; 1.00) |
+| ES | 1 | 3.48 | 3.61 | < 0.001 | 3.62 (RF D) | +1.3 (0.33; 1.00) |
+| ES | 5 | 3.35 | 3.53 | < 0.001 | 3.54 (EN D) | +0.8 (0.43; 1.00) |
+| ES | 22 | 2.40 | 3.04 | 0.025 | 3.05 (EN A) | +0.4 (0.45; 1.00) |
 
-- **HAR is worth 0.1–0.6 percentage points a year more than Persistence,** most at 22 days, where Persistence's spike errors are costliest.
-- **The best ML model adds about 0.06–0.08 points a year over HAR for SPY at 1 and 5 days,** and almost nothing elsewhere. Model choice matters less than having a model at all.
+- **HAR is worth 0.1–0.6 percentage points a year more than Persistence,** most at 22 days, where Persistence's spike errors are costliest. The gain is significant at every horizon for both targets.
+- **The best ML model adds about 0.06–0.08 points (6–8 basis points) a year over HAR for SPY at 1 and 5 days,** and almost nothing elsewhere.
+- **Only the 1-day SPY gain is significant.** The 1-day forests (RF C +8.0 bp, RF B +7.5 bp) beat HAR in utility and survive the Holm correction. The 5-day forest (RF B, +6.1 bp) is significant before correction ($p=0.010$) but not after it. No other forecast beats HAR in utility. This matches the QLIKE results (Section 8.10).
+- **For scale,** Bollerslev et al. (2018) find that their best model is worth 48 basis points a year over a static risk model, but only 8 over a 21-day realized-volatility average. Moving from that average to their HExp model adds 6. They call gains of several basis points "noticeable" and tens of basis points "large". Our 6–8 bp ML gain over HAR is of the same size as their gain between two dynamic models. As in their results, model choice matters less than having a model at all.
+- *Method (added after the test).* `evaluation/utility_test.m` computes each day's realized utility from the saved forecasts and applies the DM routine of Section 6 (Newey–West with the HLN correction) to the daily difference from HAR. It re-estimates nothing, and its mean utilities reproduce `utility_*.csv` exactly.
 
 ## 8.7 What drives the forecasts
 
@@ -757,6 +766,43 @@ What the checks show:
 
 The pattern is consistent with a calm development window that flattered both the forests (which interpolate well inside a familiar range) and Persistence (which is excellent when nothing moves). Nine test years with four stress episodes reward HAR's smooth weighting of the past and punish models trained on too narrow a range of volatility.
 
+## 8.12 Complete-window versus partial-window targets (added after the test)
+
+The main design scores a 5- or 22-day target that averages the observed days of its window, if at least 80% of them are observed (Section 3.2). Here the same saved forecasts are re-scored on two samples:
+
+- **partial window**: every origin the main design scores (Sections 8.1–8.10);
+- **complete window**: only origins whose whole target window has a Risk Lab value.
+
+`evaluation/window_check.m` re-runs the loss, DM, MCS and Holm steps on each sample; it re-estimates nothing. On the partial-window sample it reproduces `loss_*.csv` exactly.
+
+**How many windows are partial** (SPY, locked test, origins in the main results):
+
+| Horizon | Origins scored | All days observed | 1 day missing | 2 days missing | 3–4 days missing |
+|---|---|---|---|---|---|
+| $h=1$ | 2,118 | 2,118 | — | — | — |
+| $h=5$ | 2,135 | 2,012 | 123 (4 of 5) | — | — |
+| $h=22$ | 2,109 | 1,626 | 400 (21 of 22) | 81 (20 of 22) | 2 |
+
+ES has no missing NYSE session, and development has no missing Risk Lab day, so for ES and for development the two samples are identical. At $h=1$ they are also identical, because a 1-day target is either observed or dropped.
+
+**Results** (SPY, locked test; QLIKE ratio vs HAR, one-sided DM $p$, and Holm-adjusted $p$ over the 48 ML forecasts of that sample):
+
+| Forecast | Partial window (main) | Complete window |
+|---|---|---|
+| $h=1$, RF C | 0.846 ($p<0.001$; Holm $<0.001$) | identical |
+| $h=1$, RF B | 0.857 ($p<0.001$; Holm $<0.001$) | identical |
+| $h=5$, RF B | 0.883 ($p=0.006$; Holm 0.254) | 0.876 ($p=0.004$; Holm 0.202) |
+| $h=5$, RF C | 0.930 ($p=0.071$) | 0.923 ($p=0.056$) |
+| $h=22$, EN B (scorecard) | 0.971 ($p=0.33$) | 0.958 ($p=0.29$) |
+| $h=22$, EN C | 0.987 ($p=0.42$) | 0.966 ($p=0.32$) |
+| $h=22$, Persistence | 1.508 | 1.552 |
+
+- **The conclusions do not depend on the completeness rule.** Dropping the partial windows moves the ratio of every forecast within 10% of HAR by about 0.02 or less. Larger moves occur only for forecasts far from HAR (the broken elastic nets and Persistence), whose verdicts do not change. The 5-day forest gain stays significant before correction and still fails the 48-test Holm correction. Nothing beats HAR at 22 days in either sample.
+- **The MCS changes in one cell:** at $h=5$ the set-C elastic net (ratio 1.93) leaves the 10% MCS on the complete-window sample.
+- **Neither sample shows performance against the full-window outcome that was never observed.** Patton's (2011) robustness result needs a conditionally unbiased volatility proxy. An average over the observed days is unbiased only if the missing days are unrelated to volatility, and they are not always: 5–9 February 2018 was the spike week (Section 8.5). The complete-window sample avoids that average but drops the windows around the gap, so it is not a random subsample either.
+
+Outputs: `window_check.csv` and `window_counts.csv` in `Output/tables/<phase>/main/`.
+
 # 9. Discussion and Relation to the Literature
 
 The project folder holds the three reference papers and the long-memory working paper cited in Section 4.3.
@@ -790,7 +836,7 @@ The team kept the proposal's specification rather than add a guard after seeing 
 # 10. Applications
 
 - **Volatility and variance trading.** A forecast of realized variance against $\mathrm{VIX}^2$ indicates when implied volatility is rich or cheap. On the test, the timing signal is directionally right for every estimated model, but significantly profitable only for the SPY-target set-A forest; the evidence for systematic swap timing is weak.
-- **Volatility targeting and risk budgeting.** A fund that scales exposure by $1/\hat\sigma$ gains 0.1–0.6 percentage points a year from using HAR instead of Persistence, and a further 0.06–0.08 points from the 1- and 5-day SPY forests.
+- **Volatility targeting and risk budgeting.** A fund that scales exposure by $1/\hat\sigma$ gains 0.1–0.6 percentage points a year from using HAR instead of Persistence, and a further 0.06–0.08 points from the 1- and 5-day SPY forests. Only the 1-day gain is statistically significant after the Holm correction (Section 8.6).
 - **Risk limits and margining.** One-day forecasts feed value-at-risk limits and initial-margin models. That is the horizon where the ML gains are largest, and the forests' advantage on extreme days is what such systems need. The COVID failure shows the forests should be trained on a window that includes a crisis, or combined with HAR.
 - **A reusable evaluation harness.** Any new volatility model can be dropped into `models/walk_forward.m` and judged against HAR and Persistence under the same rules: label gap, train-only stationarity transforms, tuning protocol, DM and MCS tests, regimes and economic checks.
 
@@ -802,7 +848,7 @@ The team kept the proposal's specification rather than add a guard after seeing 
 | Overfitting a flexible model | Nested sets; DM and MCS; design frozen at tag `design-freeze` before the test; later ideas labelled exploratory | In place |
 | ES session and sample | SPY remains the main target; Oxford-Man pre-2010 check; holiday-row robustness | In place; the short ES history proved the main weakness (Section 8.5) |
 | Over-differencing or look-ahead in choosing $d$ | Smallest $d$ passing ADF, re-chosen inside each training window; retained correlation reported (0.96–0.999); raw HAR lags kept; FFD-lag variant as robustness | In place |
-| Missing SPY days in test | Targets never imputed; rules frozen before the test; strict-rule robustness; ES models scored on those days | Done |
+| Missing SPY days in test | No target filled from another source or a model; multi-day targets average the observed days (dropped if more than 20% missing); rules frozen before the test; strict-rule and complete-window checks; ES models scored on those days | Done |
 | Overnight mismatch | ES secondary target for the swap payoff; SPY forecasts rescaled in that check only | In place |
 | Scope for one semester | Three models plus two unestimated benchmarks | In place |
 
@@ -846,7 +892,7 @@ All code is one MATLAB pipeline in `Code/` (MATLAB R2026a with the Statistics an
 | Elastic net | `models/fit_en.m` (`lasso` with Alpha, plus closed-form ridge) |
 | Random forest | `models/fit_rf.m` (`TreeBagger`, `bayesopt`) |
 | Walk-forward and scenarios | `models/walk_forward.m`, `run_job.m`, `data/make_spec.m` (main and robustness scenarios), `rv_config.m` (every setting and the test lock) |
-| Evaluation and explanation | `evaluation/evaluate_phase.m`, `qlike.m`, `dm_test.m`, `mcs.m`; `evaluation/multiple_testing.m`, `holm_rq2_check.m`, `holm_adjust.m` (Holm corrections from the saved tables); `evaluation/explain_rf.m` (Shapley, ALE) |
+| Evaluation and explanation | `evaluation/evaluate_phase.m`, `qlike.m`, `dm_test.m`, `mcs.m`; `evaluation/multiple_testing.m`, `holm_rq2_check.m`, `holm_adjust.m` (Holm corrections from the saved tables); `evaluation/window_check.m`, `utility_test.m`, `load_forecasts.m` (complete-window check; utility tests); `evaluation/explain_rf.m` (Shapley, ALE) |
 | Drivers and report | `run_parallel.sh`, `main.m`; `evaluation/report_figures.m`, `Report/build_report.py` |
 
 **How to run.**
@@ -997,7 +1043,7 @@ Status key:
 | NYSE calendar alignment; weekly series held to next release (§3.2) | Done (calendar from `features_daily.csv`; the named calendar file is not in the data folder) | `data/load_panel.m` |
 | Late starts from first date + $\ell_\tau$; common days only (§3.2) | Done for raw and FFD values. Model inputs differ: once a feature enters a fold, its rows before the start date get the training median (report §3.2) | `ffd.m`, `walk_forward.m`, `evaluate_phase.m` |
 | Missing-day counts measured (§3.2) | Done (reproduced exactly) | `data_audit.m` |
-| Missing-day treatment (§3.2: "will be decided") | Done (rules frozen before the test; strict-rule robustness) | `rv_config.m`, `data/build_design.m`; scenario `strict` |
+| Missing-day treatment (§3.2: "will be decided") | Done (rules frozen before the test; no target filled from another source; multi-day targets average the observed days; strict-rule robustness; complete-window check added after the test, Section 8.12) | `rv_config.m`, `data/build_design.m`; scenario `strict`; `evaluation/window_check.m` |
 | ES holiday rows rolled forward; dropping as robustness (§3.2) | Done | `data/load_panel.m`; scenario `holdrop` |
 | Linear forecasts floored at the training-window minimum RV (§4.1) | Done | `fit_har.m`, `fit_en.m` |
 | ADF and KPSS on every target and input, levels and logs, development sample only (§4.3) | Done (coded directly; Econometrics Toolbox not installed) | `adf_test.m`, `kpss_test.m`, `stationarity.m` |
@@ -1045,6 +1091,8 @@ Status key:
 | `.../stationarity.csv`, `long_memory_*.csv`, `long_memory_acf.png` | ADF/KPSS diagnostics with development $d^*$; long-memory estimates and memory in forecast errors |
 | `.../success_criterion.csv`, `loss_ratios_vs_HAR.csv` | Success scorecard (with Persistence floor); every loss ratio in one table |
 | `.../holm_ml_vs_har.csv`, `holm_scorecard.csv`, `holm_varswap.csv` | Holm-adjusted p-values: every ML forecast vs HAR (QLIKE and one-sided MSE), the scorecard rows, the variance-swap timing rules |
+| `.../window_check.csv`, `window_counts.csv` | Complete-window vs partial-window scores (Section 8.12) and the observed days in each retained target window |
+| `.../utility_tests.csv` | Daily-utility DM tests against HAR, with gains in basis points and Holm-adjusted $p$ (Section 8.6) |
 | `Output/tables/audit_*.csv` | Missing-data counts, the test-origin table of proposal 3.2 and the Risk Lab vs Oxford-Man cross-check |
 | `Output/logs/` | One log per MATLAB job |
 
@@ -1066,6 +1114,8 @@ Status key:
 | Uninformative | A forecast that does not significantly beat Persistence at that horizon |
 | VRP | Variance risk premium: implied minus expected realized variance |
 | Label gap | A training row is used only once its whole target window has been observed (eq. 11) |
+| Missing target day | A test day with no Risk Lab SPY value. It is never filled from another source; a multi-day target averages the observed days of its window (implicitly setting the missing days to that average) and is dropped if more than 20% of the window is missing |
+| Complete / partial window | A multi-day target window with every day observed / with up to 20% of its days missing (Section 8.12) |
 | Walk-forward | Re-estimate after each year-end on past data only; forecast the next year |
 | Floor | Linear forecasts below the training minimum of daily RV are set to that minimum |
 | ALE / Shapley | Model-agnostic explanations of how features move forecasts |

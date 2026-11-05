@@ -50,6 +50,6 @@ for S in $SCENARIOS; do echo "$S"; done | xargs -P "$JOBS" -n 1 zsh -c '
 
 # 3. explanation and diagnostics for the main design
 if (( ${SCENARIOS[(Ie)main]} )); then
-  "$MATLAB" -nodisplay -batch "$INIT explain_rf('SPY',22,'D','$PHASE'); explain_rf('ES',22,'D','$PHASE'); long_memory('$PHASE'); stationarity('$PHASE'); data_audit; export_design" \
+  "$MATLAB" -nodisplay -batch "$INIT window_check('$PHASE'); utility_test('$PHASE'); explain_rf('SPY',22,'D','$PHASE'); explain_rf('ES',22,'D','$PHASE'); long_memory('$PHASE'); stationarity('$PHASE'); data_audit; export_design" \
     > "$LOGS/${PHASE}_main_explain.log" 2>&1 || echo "FAILED: explain/diagnostics"
 fi

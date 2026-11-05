@@ -46,6 +46,8 @@ run once. Anything changed after that is exploratory.
 | | `evaluation/dm_test.m`, `mcs.m`, `qlike.m` | Diebold-Mariano (Newey-West + HLN); Model Confidence Set (T_max, block bootstrap); QLIKE |
 | | `evaluation/multiple_testing.m`, `holm_adjust.m` | Holm corrections read from the saved tables (nothing re-estimated): every EN / RF forecast vs HAR on QLIKE and one-sided MSE, the success-criterion rows and the variance-swap timing rules (`holm_*.csv`) |
 | | `evaluation/holm_rq2_check.m` | Holm check of the RQ2 p-values (three set steps per target and horizon); prints only |
+| | `evaluation/window_check.m`, `load_forecasts.m` | Complete-window vs partial-window re-scoring of the saved forecasts, with observed-day counts (`window_check.csv`, `window_counts.csv`); nothing re-estimated |
+| | `evaluation/utility_test.m` | DM tests on daily vol-targeting utility differences against HAR, Holm-adjusted (`utility_tests.csv`); nothing re-estimated |
 | | `evaluation/explain_rf.m` | Shapley values and ALE for the last-fold random forest |
 | | `evaluation/report_figures.m` | Pipeline and walk-forward diagrams for the report |
 
