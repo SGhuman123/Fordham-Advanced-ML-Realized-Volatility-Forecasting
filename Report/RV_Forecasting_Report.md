@@ -775,7 +775,7 @@ The team kept the proposal's specification rather than add a guard after seeing 
 9. **Hand-coded tests.** ADF and KPSS are coded directly rather than taken from the Econometrics Toolbox. They reproduce the textbook behaviour on simulated white noise and random walks.
 10. **An earlier look at two benchmarks.** Before the team adopted a single pipeline, a standalone HAR script also scored HAR and Persistence on 2018–2026 (20 October 2026). Neither benchmark has tuning parameters, and no design choice used those numbers.
 
-**Exploratory next steps** (outside the frozen design): an elastic net with an unpenalized HAR block or a $\lambda$ floor; forests on log RV, or forests combined with HAR; a training window that adds pre-2010 Oxford-Man jump measures to the ES models; the optional boosting run.
+**Exploratory next steps** (outside the frozen design): an elastic net with an unpenalized HAR block or a $\lambda$ floor; forests on log RV, or forests combined with HAR; a training window that adds pre-2010 Oxford-Man jump measures to the ES models; the optional boosting run. An LSTM, which the professor noted would significantly expand the project, is left to future work; both Rahimikia & Poon (2026) and Kılıç (2026) use LSTMs, so it is the natural next ML benchmark.
 
 # 12. Implementation and Code
 
