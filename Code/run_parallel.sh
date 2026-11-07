@@ -7,6 +7,7 @@
 #   ./run_parallel.sh dev robustness      # every robustness scenario
 #   ./run_parallel.sh dev all             # main design and every robustness scenario
 #   ./run_parallel.sh test all            # locked test (needs cfg.runLockedTest = true)
+#   ./run_parallel.sh dev boost           # exploratory gradient boosting (after dev main)
 #
 # JOBS sets how many MATLAB processes run at once (default 7, two threads each).
 
@@ -25,7 +26,8 @@ INIT="addpath(genpath(\"$CODE\"));"
 
 typeset -A TARGETS
 TARGETS=(main "SPY ES" rolling "SPY ES" rv15 "SPY" qmle "SPY" strict "SPY" oxford "SPY" vix1996 "SPY" \
-         rv1 "ES" rk "ES" holdrop "ES" rfdefault "SPY ES" ffdlags "SPY ES" eslag1 "SPY ES")
+         rv1 "ES" rk "ES" holdrop "ES" rfdefault "SPY ES" ffdlags "SPY ES" eslag1 "SPY ES" \
+         boost "SPY ES")
 ROBUST=(rolling rv15 qmle strict rv1 rk holdrop oxford vix1996 rfdefault ffdlags eslag1)
 case "$SCEN" in
   robustness) SCENARIOS=($ROBUST) ;;
