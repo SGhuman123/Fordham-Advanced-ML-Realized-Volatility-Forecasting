@@ -352,10 +352,10 @@ The following are out of scope:
 
 - LogHAR, LevHAR, HAR-X, HAR-J/CJ, SHAR and HARQ;
 - $\mathrm{VIX}^2/252$ as a forecasting model;
-- gradient boosting, neural nets and LSTMs;
+- neural nets and LSTMs (gradient boosting appears only in the post-freeze exploratory run of Section 7.4);
 - forecast combinations.
 
-$\mathrm{VIX}^2$ remains the **market strike** in the variance-swap test, not a competing forecast. The optional exploratory boosting run on the winning feature set was not carried out.
+$\mathrm{VIX}^2$ remains the **market strike** in the variance-swap test, not a competing forecast. An exploratory gradient-boosting comparison was run after the design freeze, on the development period only (Section 7.4); it is not part of the frozen design or the locked test.
 
 # 5. Validation Design
 
@@ -529,6 +529,72 @@ The frozen code is git tag `design-freeze`. The test was then run once for the m
 - **Timeline.** The design was frozen and the test run on the same evening, 21 October 2026: the `design-freeze` tag was created at 21:43 and the test results committed at 23:51. The pull request that merged them had no recorded review.
 - **The review.** On 31 October 2026 the three team members reviewed each of the four decisions above and agreed to report them as they ran. This is a review made **after** the test, not approval given before it.
 - **A check made at the same time.** The 60% window for `overnight_w` (Section 3.2) was confirmed to be already in the frozen code.
+
+## 7.4 Exploratory gradient boosting (post-freeze)
+
+After the design freeze, we ran an **exploratory** gradient-boosting comparison against the random forest on the same nested feature sets A–D. This run is outside the frozen design: it uses the development period only (`cfg.gb.allowTest = false`), writes to its own `boost` scenario folder, and leaves the locked 2018–2026 test untouched. The proposal's optional "boosting on the winning set" was not the design used here; the comparison is set-by-set against the forest.
+
+The feature sets are the nested sets of Section 4.2, each adding to the one before:
+
+- **Set A (HAR lags):** daily, weekly (5-day) and monthly (22-day) averages of the target's own realized variance.
+- **Set B (+ market):** A plus negative-return averages, Parkinson range, log VIX, the variance risk premium, the SPX implied-vol surface (ATM level, skew, term slope), rates (10Y yield, 10Y-3M spread), VVIX, SKEW, VIX term-structure spreads, log VXN and log RVX.
+- **Set C (+ macro/stress):** B plus real-time ADS, log EPU, news sentiment, log GPR, CISS, NFCI, STLFSI4, the squared Hang Seng return and calendar flags.
+- **Set D (+ ES measures):** C plus ES continuous and jump averages, signed semivariances, quarticity-adjusted RV, the realized kernel and overnight variance (from January 2010).
+
+**Method.** Gradient boosting is least-squares boosting of regression trees (MATLAB `fitrensemble`, `Method=LSBoost`), implemented in `fit_gb.m` with the same walk-forward interface as the forest: FFD inputs, train-only median imputation, chronological sub / validation masks (fit on targets ending by year $Y-3$, score origins in $Y-2$–$Y-1$), and the training-window floor on forecasts. A restrained grid of 36 settings —
+
+- maximum splits $\{3,7,15,31\}$,
+- learning rate $\{0.01,0.05,0.1\}$,
+- minimum leaf size $\{5,20,50\}$ —
+
+is searched on validation QLIKE. For each setting an ensemble of up to 1{,}000 trees is grown on the sub-window, and the number of trees is chosen by staged validation QLIKE (checkpoints every 20 trees). There is no `OptimizeHyperparameters` and no $k$-fold CV. The winning (splits, rate, leaf, trees) is refit on all training rows. Scenario `boost` estimates only GB; Persistence, HAR, elastic net and the forest are copied from the saved `main` forecasts so the comparison uses identical paths for those four models.
+
+**Scope of the numbers below.** All figures are development-period, all-model common days ($n=755$), QLIKE ÷ HAR QLIKE (lower is better), with the same bold / ✓ / † notation as Section 7.1. They are **not** locked-test results. The ES figures use the pre–PR #9 forecast timing (before the move to 5 PM ET); whether ES needs a rerun after that change is an open check.
+
+### Best GB versus best RF (QLIKE ratio vs HAR)
+
+| Target | $h$ | Best GB | Best RF | GB beats RF on that cell? |
+|------|----|------|------|------|
+| SPY | 1 | **0.719** ✓† (B) | **0.705** ✓† (C) | no (but GB B **0.719** beats RF B **0.745**) |
+| SPY | 5 | 1.102 ✓ (A) | **0.914** ✓ (D) | no |
+| SPY | 22 | 1.341 ✓ (A) | 0.922 ✓ (A) | no |
+| ES | 1 | **0.790** ✓ (C) | **0.614** ✓† (D) | no |
+| ES | 5 | 1.054 ✓ (A) | **0.754** ✓ (C) | no |
+| ES | 22 | 1.391 ✓ (A) | 0.967 ✓ (A) | no |
+
+GB is the best ML model in **none** of the six target–horizon cells (`success_criterion.csv`: winners remain RF C / RF D / EN B / RF D / EN B / EN B). Across all 24 matched GB-vs-RF cells (2 targets × 3 horizons × 4 sets), GB has the lower QLIKE ratio in **only one** cell: SPY, 1 day, set B (0.719 vs 0.745).
+
+### Full GB grid (QLIKE ratio vs HAR)
+
+| Target | $h$ | GB A | GB B | GB C | GB D |
+|------|----|------|------|------|------|
+| SPY | 1 | **0.843**† | **0.719** ✓† | **0.733** ✓† | 0.874 |
+| SPY | 5 | 1.102 ✓ | 1.203 ✓ | 1.312 ✓ | 1.640 ✓ |
+| SPY | 22 | 1.341 ✓ | 1.416 ✓ | 1.367 ✓ | 2.186 |
+| ES | 1 | 0.991 ✓ | 0.859 ✓ | **0.790** ✓ | 0.880 ✓ |
+| ES | 5 | 1.054 ✓ | 1.178 | 1.358 | 1.378 |
+| ES | 22 | 1.391 ✓ | 2.018 | 2.627 | 2.389 |
+
+(MCS dropouts among GB: SPY 1-day A and D; SPY 22-day D; ES 5-day B, C, D; ES 22-day B, C, D. Several of the multi-day dropouts are also significantly worse than HAR on the Diebold–Mariano $p$-values in `loss_ratios_vs_HAR.csv`.)
+
+### What the boosting run showed
+
+- **Competitive only at 1 day.** On SPY, GB sets B and C beat HAR by about 27–28% and stay in the MCS (and significantly beat Persistence). On ES, set C beats HAR (ratio 0.790, $p\approx0.04$) and stays in the MCS, but the forest on sets B–D is far ahead (best RF 0.614).
+- **Breaks down at 5 and 22 days.** Every GB QLIKE ratio is above 1 against HAR at those horizons. Losses generally worsen as the feature set gets richer (A → D), which is the opposite of the forest's usual pattern and looks like overfitting under sequential residual fitting.
+- **MCS.** At 5 and 22 days for ES, sets B–D drop out of the 10% MCS; SPY set D drops at 22 days. At SPY 5 days every GB cell remains in the MCS despite ratios above 1 — none of those cells is close to the forest.
+- **MSE vs QLIKE.** In 7 of the 24 matched cells GB has a lower MSE ratio than the forest even when its QLIKE is worse (notably SPY 1-day B and C, and SPY 22-day B). QLIKE remains the primary loss; the MSE gap does not overturn the ranking.
+- **Interpretation.** Bagging averages noisy trees; boosting fits residuals step by step. On this noisy realized-variance target the forest's averaging is the more stable nonlinear model. That is a useful negative result for the report: under the same features, walk-forward and validation rule, restrained LSBoost does not displace the random forest.
+
+### Multiple testing (Holm)
+
+Adding the 24 GB-vs-HAR tests enlarges the family of one-sided QLIKE tests of each ML model against HAR from 48 (EN and RF) to 72. With the Holm (1979) step-down correction at the 5% level over all 72 tests:
+
+- **The best ML model in each cell is unchanged.** SPY 1-day RF C, ES 1-day RF D and ES 5-day EN B remain significant; SPY 5-day RF D, SPY 22-day EN B and ES 22-day EN B remain not significant.
+- **Three EN/RF results lose significance:** SPY 1-day RF D (adjusted $p$ from 0.032 to 0.050), SPY 1-day RF A (0.037 to 0.058) and ES 1-day EN D (0.048 to 0.075). The other ten EN/RF wins hold.
+- **GB:** only SPY 1-day sets A, B and C beat HAR after the correction; ES 1-day set C does not. No GB model beats HAR at 5 or 22 days.
+- No model beats HAR on MSE after the correction.
+
+The RQ2 set-step tests (A to B, C and D, in families of three per target and horizon) do not involve GB and are unchanged.
 
 # 8. Results: Locked Test (2018 – October 2026)
 
@@ -906,7 +972,7 @@ The team kept the proposal's specification rather than add a guard after seeing 
 9. **Hand-coded tests.** ADF and KPSS are coded directly rather than taken from the Econometrics Toolbox. They reproduce the textbook behaviour on simulated white noise and random walks.
 10. **An earlier look at two benchmarks.** Before the team adopted a single pipeline, a standalone HAR script also scored HAR and Persistence on 2018–2026 (20 October 2026). Neither benchmark has tuning parameters, and no design choice used those numbers.
 
-**Exploratory next steps** (outside the frozen design): an elastic net with an unpenalized HAR block or a $\lambda$ floor; forests on log RV, or forests combined with HAR; a training window that adds pre-2010 Oxford-Man jump measures to the ES models; the optional boosting run. An LSTM, which the professor noted would significantly expand the project, is left to future work; both Rahimikia & Poon (2026) and Kılıç (2026) use LSTMs, so it is the natural next ML benchmark.
+**Exploratory next steps** (outside the frozen design): an elastic net with an unpenalized HAR block or a $\lambda$ floor; forests on log RV, or forests combined with HAR; a training window that adds pre-2010 Oxford-Man jump measures to the ES models. An LSTM, which the professor noted would significantly expand the project, is left to future work; both Rahimikia & Poon (2026) and Kılıç (2026) use LSTMs, so it is the natural next ML benchmark.
 
 # 12. Implementation and Code
 
@@ -926,6 +992,7 @@ All code is one MATLAB pipeline in `Code/` (MATLAB R2026a with the Statistics an
 | Persistence and HAR | `models/fit_persistence.m`, `models/fit_har.m` |
 | Elastic net | `models/fit_en.m` (`lasso` with Alpha, plus closed-form ridge) |
 | Random forest | `models/fit_rf.m` (`TreeBagger`, `bayesopt`) |
+| Gradient boosting (exploratory, §7.4) | `models/fit_gb.m` (`fitrensemble`, LSBoost) |
 | Walk-forward and scenarios | `models/walk_forward.m`, `run_job.m`, `data/make_spec.m` (main and robustness scenarios), `rv_config.m` (every setting and the test lock) |
 | Evaluation and explanation | `evaluation/evaluate_phase.m`, `qlike.m`, `dm_test.m`, `mcs.m`; `evaluation/multiple_testing.m`, `holm_rq2_check.m`, `holm_adjust.m` (Holm corrections from the saved tables); `evaluation/window_check.m`, `utility_test.m`, `load_forecasts.m` (complete-window check; utility tests); `evaluation/explain_rf.m` (Shapley, ALE) |
 | Drivers and report | `run_parallel.sh`, `main.m`; `evaluation/report_figures.m`, `Report/build_report.py` |
@@ -1093,7 +1160,7 @@ Status key:
 | Elastic net: $\alpha$ and $\lambda$ tuned; ridge and lasso special cases; coefficients reported (§4.6) | Done | `fit_en.m`, `explain_*.csv` |
 | Random forest; impurity importance (§4.7) | Done | `fit_rf.m` |
 | Excluded models not estimated (§4.8) | Done | — |
-| Optional exploratory boosting run (§4.8) | Optional | — |
+| Optional exploratory boosting run (§4.8) | Done after the freeze, development only (§7.4) | `fit_gb.m`, scenario `boost` |
 | Boundaries; re-fit after each year-end; development years once the window holds five years (§5) | Done | `walk_forward.m`, `rv_config.m` |
 | Tuning on the last two years; label gap (eq. 10) (§5) | Done | `walk_forward.m` |
 | Availability timing and publication shifts (§5) | Done | `build_design.m` |
