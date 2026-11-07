@@ -65,7 +65,7 @@ names = {};  group = {};  source = {};  shift = [];  X = zeros(N, 0);
 tsrc = target_source(spec);
 
 mf = cfg.lagMinFrac;
-esLag = spec.esLag;
+esLag = 0;  if isfield(spec, 'esLag'), esLag = spec.esLag; end   % forecasts saved before eslag1 have no such field
 lagA  = 0;                       % publication shift of the target's own history
 rvSeen = rv;
 if strcmp(spec.target, 'ES') && esLag > 0

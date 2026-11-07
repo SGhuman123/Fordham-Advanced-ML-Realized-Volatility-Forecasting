@@ -64,5 +64,6 @@ run once. Anything changed after that is exploratory.
 | `vix1996` | SPY | HAR lags + log VIX, sample from 1996 |
 | `rfdefault` | SPY, ES | Random forest with untuned Breiman defaults (500 trees, leaf 5, p/3) |
 | `ffdlags` | SPY, ES | The ML lag block is replaced by FFD log RV (proposal 4.3 robustness); Persistence and HAR stay on raw lags |
+| `eslag1` | SPY, ES | 16:00 ET origin: every ES-derived input, and an ES target's own lags, lagged one session; SPY runs sets A and D only (added after the test) |
 
 Every implementation choice the proposal leaves open is listed in Section 11 of the report.
