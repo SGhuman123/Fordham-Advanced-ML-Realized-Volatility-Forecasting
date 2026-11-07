@@ -252,7 +252,7 @@ All data were downloaded and cleaned by Robin, and are in `Realize Volatility Da
 
 ### 4.1 Avoiding look-ahead bias (very important)
 
-Every feature must be **public at the forecast time** (the close of day t):
+Every feature must be **public at the forecast time** (17:00 ET on day t, once the ES session has closed; report Section 5):
 
 - **Same day (shift 0):** market closes, Treasury rates, Hang Seng (closes before the NYSE opens), Cboe indices, the IV surface, and ES (closes 17:00 ET).
 - **Shifted:**
@@ -386,7 +386,7 @@ LogHAR, HAR-J, SHAR, HARQ, ARFIMA, boosting, neural networks and forecast combin
 
 - **MSE:** average squared error. It is dominated by a few huge days.
 - **QLIKE (primary):** average of [y/f − ln(y/f) − 1]. It is zero when the forecast is perfect, it **punishes under-prediction more**, and it depends only on the ratio actual/forecast. Patton (2011) shows it ranks forecasts correctly even though RV is a noisy proxy.
-- **Also reported:** MAE and out-of-sample R².
+- **Also reported:** MAE (descriptive only, because it can't rank forecasts reliably when RV is noisy; Patton, 2011) and out-of-sample R².
 - **Loss ratio** = model ÷ HAR. **Below 1 beats HAR.** v5.4 also adds the ratio against Persistence.
 
 ### 7.2 Diebold–Mariano (DM) test
@@ -495,7 +495,7 @@ Code/run_parallel.sh dev main     # one scenario only; any scenario name works i
 python3 Report/build_report.py    # rebuild the report (.docx and .pdf)
 ```
 
-- **Scenarios:** `main`, `rolling`, `rv15`, `qmle`, `strict`, `rv1`, `rk`, `holdrop`, `oxford`, `vix1996`, `rfdefault`, `ffdlags`. What each one changes is in `Code/README.md` and Section 9.10.
+- **Scenarios:** `main`, `rolling`, `rv15`, `qmle`, `strict`, `rv1`, `rk`, `holdrop`, `oxford`, `vix1996`, `rfdefault`, `ffdlags`, `eslag1`. What each one changes is in `Code/README.md` and Section 9.10.
 - **The new `strict` scenario** (SPY) drops any origin whose target or 22-day lag window touches a missing Risk Lab day, instead of using the 80% / 20% rules.
 - **Speed:** `JOBS=n` sets how many MATLAB processes run at once (default 7). Set `MATLAB=/path/to/matlab` if MATLAB isn't in `/Applications`. The report gives about 35 minutes for `dev all` and about 45 minutes for `test all` on a 14-core Mac.
 - **Serial run inside MATLAB:** `cd Code; main` (development period only; slower).
@@ -715,12 +715,14 @@ All 11 robustness scenarios were run on the test with the frozen design:
 | `vix1996` | SPY: HAR lags + log VIX, sample from 1996 |
 | `rfdefault` | Untuned forest (500 trees, leaf 5, p/3) |
 | `ffdlags` | The ML lag block is FFD log RV instead of raw lags |
+| `eslag1` | 16:00 ET origin: ES-derived inputs lagged one session (added after the test) |
 
 The `strict` rule removes about a quarter of the SPY 22-day test origins (2,160 → 1,647). What the checks show on the test (report Section 8.9):
 
 - **SPY, short horizons:** the 1-day forest gain (0.83–0.89 of HAR) survives the alternative SPY targets, the strict rule, untuned forests, FFD lags and the 1996 start.
 - **Rolling window:** it weakens (0.93, not significant), because the window drops 2008 from training. This is the same training-history story as COVID.
-- **ES:** nothing significantly beats HAR, except the *untuned* forest on set D at 1 day (0.91).
+- **ES at the 17:00 origin:** nothing significantly beats HAR, except the *untuned* forest on set D at 1 day (0.91).
+- **ES at a 16:00 origin (`eslag1`, added after the test):** HAR can then use only yesterday's ES session, and its 1-day loss rises 39%. The forests on sets B–D beat that weaker HAR at 1 day (0.73–0.76), but the best of them (QLIKE 0.195) is no more accurate than HAR at 17:00 (0.193).
 - **22 days:** nothing beats HAR anywhere, and Persistence is 1.3–1.7 times worse than HAR in every scenario. Results are in `Output/tables/test/<scenario>/summary.md`.
 
 ### 9.11 Success-criterion scorecard
@@ -946,7 +948,7 @@ Three safeguards:
 ### About the method
 
 **Q: Why QLIKE instead of MSE?**
-It is robust to noise in the RV proxy (Patton, 2011). It depends on the ratio rather than the size of errors, so a handful of crisis days don't dominate. It also penalizes under-prediction more, which suits risk management.
+Both losses are robust to noise in the RV proxy (Patton, 2011), so that isn't the reason. QLIKE depends on the ratio rather than the size of errors, so a handful of crisis days don't dominate. It also needs weaker moment conditions than MSE, gives DM tests more power, and penalizes under-prediction more, which suits risk management.
 
 **Q: Why tune on QLIKE when models are fitted with squared error?**
 Models are fitted with their natural objectives, and hyperparameters are *selected* on the loss we're judged by.
@@ -1066,6 +1068,6 @@ No substantive deviations. The choices the proposal left open (missing days, ES 
 | RV long memory | Local Whittle d ≈ 0.37–0.63 |
 | EN floor frequency | 8–12% of SPY days (development, sets B/C); up to 3% (test) |
 | Risk Lab vs Oxford-Man | Correlation 0.968 over 4,293 days |
-| Robustness scenarios | 11 (incl. `strict` and `ffdlags`) |
+| Robustness scenarios | 12 (incl. `strict`, `ffdlags` and, added after the test, `eslag1`) |
 | Runtime | ~35 min `dev all`, ~45 min `test all` (14-core Mac) |
-| Freeze and lock | Tag `design-freeze`; `cfg.runLockedTest = true` in `Code/rv_config.m` (set once, after the freeze) |
+| Freeze and lock | Tag `design-freeze`; `cfg.runLockedTest` in `Code/rv_config.m`, set to `true` for the test and back to `false` afterwards |

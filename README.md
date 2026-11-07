@@ -32,7 +32,7 @@ From the repository root:
 ```sh
 Code/run_parallel.sh dev all      # development period: main design + all robustness scenarios
 Code/run_parallel.sh test all     # locked test (cfg.runLockedTest in Code/rv_config.m must be true)
-Code/run_parallel.sh dev main     # one scenario only (main, rolling, rv15, qmle, strict, rv1, rk, holdrop, oxford, vix1996, rfdefault, ffdlags)
+Code/run_parallel.sh dev main     # one scenario only (main, rolling, rv15, qmle, strict, rv1, rk, holdrop, oxford, vix1996, rfdefault, ffdlags, eslag1)
 python3 Report/build_report.py    # rebuild the report (.docx and .pdf)
 ```
 
