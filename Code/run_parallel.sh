@@ -25,8 +25,8 @@ INIT="addpath(genpath(\"$CODE\"));"
 
 typeset -A TARGETS
 TARGETS=(main "SPY ES" rolling "SPY ES" rv15 "SPY" qmle "SPY" strict "SPY" oxford "SPY" vix1996 "SPY" \
-         rv1 "ES" rk "ES" holdrop "ES" rfdefault "SPY ES" ffdlags "SPY ES")
-ROBUST=(rolling rv15 qmle strict rv1 rk holdrop oxford vix1996 rfdefault ffdlags)
+         rv1 "ES" rk "ES" holdrop "ES" rfdefault "SPY ES" ffdlags "SPY ES" eslag1 "SPY ES")
+ROBUST=(rolling rv15 qmle strict rv1 rk holdrop oxford vix1996 rfdefault ffdlags eslag1)
 case "$SCEN" in
   robustness) SCENARIOS=($ROBUST) ;;
   all)        SCENARIOS=(main $ROBUST) ;;

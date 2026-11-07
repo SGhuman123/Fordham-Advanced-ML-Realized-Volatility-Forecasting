@@ -164,13 +164,13 @@ Pre-2005 Risk Lab data enter only a VIX-only robustness check.
 ## 3.3 Limitations
 
 - **VOLARE coverage.** VOLARE has no SPY or index series; ES is its only S&P 500 instrument. It is refreshed monthly, and ES ends 30 September 2026.
-- **ES session timing.** The ES day is inferred as 18:00–17:00 ET, and roll dates are not flagged.
+- **ES session timing.** The ES day is inferred as 18:00–17:00 ET, and roll dates are not flagged. Because the day-$t$ ES measures are complete only at 17:00 ET, the forecast origin is 17:00 ET (Section 5).
 - **Missing feature types.** We lack limit-order-book and news-text features (central to Rahimikia & Poon) and the firm-level implied vol used by Christensen et al.
 - **Overnight move.** SPY intraday RV omits the overnight move, so it covers only about 56% of close-to-close variance. ES captures about 95%, which is why it is the preferred target for the variance-swap check.
 
 # 4. Methodology
 
-Forecasts are produced at the close of each NYSE day $t$ for horizons $h\in\{1,5,22\}$ trading days. Figure 1 summarizes the pipeline.
+Forecasts are issued at 17:00 ET on each NYSE day $t$, once the day's ES session has closed (Section 5), for horizons $h\in\{1,5,22\}$ trading days. Figure 1 summarizes the pipeline.
 
 ![*Figure 1.* Forecasting pipeline. Persistence and the three models share targets, feature sets and the walk-forward engine; only the fitting step differs.](figures/pipeline.png){width=74%}
 
@@ -373,12 +373,12 @@ $$\mathcal D_Y(h)=\bigl\{(\mathbf x_s,\ \mathrm{RV}_{s+1:s+h}):\ s+h\le T_Y\bigr
 EQNUM(11)
 
 - **Rolling window.** A rolling 10-year window (8-year for ES) is a robustness check.
-- **Availability timing.** The forecast origin is the end of NYSE day $t$. An input dated $t$ enters only if it is published by then; later releases are shifted:
+- **Availability timing.** The forecast origin is **17:00 ET on NYSE day $t$**. An input dated $t$ enters only if it is published by then; later releases are shifted:
 
 | Input | Value for day $t$ is known | Shift (sessions) |
 |----------------------------------------|------------------------------|----------------|
-| Risk Lab SPY RV; S&P 500 OHLC; Cboe VIX family, VVIX, VXN, VXD, RVX; Bloomberg IV surface | End of day $t$ | 0 |
-| VOLARE ES measures | 17:00 ET on $t$ (Globex close) | 0 |
+| Risk Lab SPY RV; S&P 500 OHLC; Cboe VIX family, VVIX, VXN, VXD, RVX; Bloomberg IV surface | Close of day $t$ (by 16:15 ET) | 0 |
+| VOLARE ES measures | 17:00 ET on $t$ (Globex close), the forecast origin | 0 |
 | Hang Seng | 04:00 ET on $t$, before the NYSE open | 0 |
 | Treasury T10Y3M, DGS10 | Late afternoon of $t$ | 0 |
 | EPU | Morning of $t+1$ | 1 |
@@ -387,6 +387,17 @@ EQNUM(11)
 | ADS | Real-time vintage released before $t$ (current vintage lagged 5 days before Dec 2008, training rows only) | Built in |
 | NFCI, STLFSI4 | Weekly; placed on release date | Built in |
 | Fama–French factors | About one month later | Not used |
+
+- **Why 17:00 ET.** Earlier versions of this report placed the origin at the NYSE close (16:00 ET). The models, however, use the day-$t$ ES measures with no lag:
+  - as set-D features (ES continuous, jump, semivariance, quarticity and kernel measures, and overnight variance);
+  - as the ES target's own history (its HAR lags, the Persistence forecast and the VRP);
+  - through the ES holiday sessions rolled into the next NYSE day.
+
+  Those measures are complete only when the Globex session closes at 17:00 ET, so a 16:00 forecast could not have used them. Following the instructor's comments (1 November 2026), we state the origin as 17:00 ET. No input, forecast or loss changes: the convention makes the stated timing match the data the models used. Both targets start after the origin: SPY RV for $t+1$ at the 09:30 open, and the ES session for $t+1$ at 18:00 on day $t$.
+- **The other convention.** Keeping a 16:00 origin would require lagging every ES-derived input by one session. That variant was run after the test as a robustness check (scenario `eslag1`, Section 8.9).
+- **Consequence for the economic checks.**
+  - The volatility-targeting utility is unaffected, because the position is set before the next session starts.
+  - The variance-swap check (Section 6) is stylized: it uses the day-$t$ VIX close (16:15 ET) as the strike and the close-to-close payoff from day $t$, both of which come before a 17:00 forecast. A tradeable version would enter one session later. This is disclosed here rather than re-computed.
 
 ![*Figure 3.* Expanding-window walk-forward. The 2018–2026 block is evaluated once, after every design choice is frozen.](figures/walkforward.png){width=100%}
 
@@ -398,11 +409,11 @@ All scores are strictly out of sample and computed on the same origins for every
 
 | Area | Metrics |
 |--------------------|------------------------------------------------------------------|
-| Statistical accuracy | MSE and QLIKE on the variance scale (QLIKE primary; Patton, 2011); MAE; out-of-sample $R^2$ against the HAR training-window mean |
+| Statistical accuracy | MSE and QLIKE on the variance scale (QLIKE primary; Patton, 2011); MAE (descriptive only); out-of-sample $R^2$ against the HAR training-window mean |
 | Significance | Diebold–Mariano tests with Newey–West variance and HLN correction, against HAR and against Persistence; Model Confidence Set at 10% over Persistence, HAR, EN and RF (Hansen, Lunde & Nason, 2011) |
 | Attribution | Loss ratios vs HAR and vs Persistence by feature set and horizon; RF-minus-EN change in loss from set A to B, C and D (RQ2); calm vs high-RV regimes; normal vs extreme days; stress episodes |
 | Economic value | Realized utility of a volatility-targeting rule (Bollerslev et al., 2018); stylized variance-swap P&L vs VIX² |
-| Robustness | Rolling window; Risk Lab 15-min and QMLE; ES rv1 / kernel / holiday-drop; Oxford-Man pre-2010 jump features; 1996 VIX-only start; FFD-lag variant; untuned forest |
+| Robustness | Rolling window; Risk Lab 15-min and QMLE; ES rv1 / kernel / holiday-drop; Oxford-Man pre-2010 jump features; 1996 VIX-only start; FFD-lag variant; untuned forest; 16:00 origin with ES inputs lagged (added after the test) |
 
 **Losses.** With forecast $\hat y_t$ of realized variance $y_t$ over $T$ days, the two losses are (Patton, 2011):
 
@@ -410,7 +421,17 @@ $$\mathrm{MSE}=\frac{1}{T}\sum_{t=1}^{T}(y_t-\hat y_t)^2,\qquad \mathrm{QLIKE}=\
 
 EQNUM(12)
 
-QLIKE is robust to noise in the volatility proxy, and it penalizes under-prediction more than over-prediction.
+**Why these losses** (Patton, 2011):
+
+- **Both MSE and QLIKE are robust.** Realized variance measures the true variance with noise. With a conditionally unbiased proxy such as 5-minute RV, both losses rank two forecasts the same way the unobserved true variance would. They are the only such losses among the common choices.
+- **QLIKE is primary for three reasons:**
+  - it depends only on the ratio $y_t/\hat y_t$, so a few crisis days weigh less than under MSE;
+  - it needs weaker moment conditions than MSE;
+  - Diebold–Mariano tests based on it have more power (Patton & Sheppard, 2009).
+
+  It also penalizes under-prediction more than over-prediction.
+- **MAE is reported for description only.** It is not robust: its optimal forecast is the conditional median, which lies below the conditional variance. It is therefore not used to rank forecasts.
+- **Out-of-sample $R^2$** is a monotone transformation of MSE, so it ranks forecasts as MSE does.
 
 **Diebold–Mariano.** For a loss differential $d_t$ (benchmark loss minus model loss):
 
@@ -502,6 +523,12 @@ The design entering the test was the proposal's specification, unchanged, with t
 - the feature sets of Section 4.2, including the VIX3M − VIX term-structure spread that proposal Section 4.2 lists for set B.
 
 The frozen code is git tag `design-freeze`. The test was then run once for the main design and every robustness scenario.
+
+**Team review of the freeze (31 October 2026).**
+
+- **Timeline.** The design was frozen and the test run on the same evening, 21 October 2026: the `design-freeze` tag was created at 21:43 and the test results committed at 23:51. The pull request that merged them had no recorded review.
+- **The review.** On 31 October 2026 the three team members reviewed each of the four decisions above and agreed to report them as they ran. This is a review made **after** the test, not approval given before it.
+- **A check made at the same time.** The 60% window for `overnight_w` (Section 3.2) was confirmed to be already in the frozen code.
 
 # 8. Results: Locked Test (2018 – October 2026)
 
@@ -712,12 +739,20 @@ Each check reruns the frozen walk-forward on the test with one change. The table
 | FFD-lag variant (ML lag block = FFD log RV) | SPY RF CL **0.84** ✓†; ES RF CL 0.97 ✓† | SPY RF BL **0.88** ✓†, RF CL **0.89** ✓† | SPY EN BL 0.97 ✓; ES ≥ 1.13 |
 | Oxford-Man jump features, SPY 2018–2021 ($n\approx970$) | RF C+OM **0.87** ✓† vs RF C **0.92** ✓† | RF C 0.97 ✓† | EN C 0.99 ✓ |
 | 1996 start, HAR lags + log VIX | RF A+VIX **0.89** ✓†, RF A **0.93**† | RF A+VIX **0.90** ✓† | EN A+VIX 1.00 ✓ |
+| 16:00 origin, ES inputs lagged one session, SPY (sets A, D; added after the test) | RF D 0.96 ✓† | every set-D forecast ≥ 1.11 | EN D 1.25 ✓ |
+| 16:00 origin, ES inputs lagged one session, ES (added after the test) | RF B **0.73** ✓†, RF D **0.74** ✓†, RF C **0.76** ✓† | RF C 0.90 ✓† | EN A 0.99 ✓† |
 
 What the checks show:
 
 - **The SPY short-horizon result is robust where the training history includes 2008.** The 1-day forest gain over HAR (0.83–0.89) survives the alternative SPY targets (15-min RV, QMLE), the strict missing-day rule, untuned forests, FFD lags and the 1996 start. At 5 days it survives 15-min RV, the strict rule, FFD lags and the 1996 start.
 - **It weakens with a rolling window.** A 10-year rolling window drops 2008 from SPY training after the 2018 re-fit, and the 1-day forest gain shrinks to 0.93, no longer significant. This is the same training-history effect as the COVID failure (Section 8.5).
 - **ES: no check produces a significant gain over HAR, with one exception.** The untuned forest on set D (0.91 at 1 day) does, which suggests that the tuned ES forests were over-fitted to calm validation years. The alternative ES targets, the holiday-row treatment and the rolling window change nothing material.
+- **The ES forecast-time convention matters for ES at 1 day.** This check was added after the test, following the instructor's comments; Section 5 explains the two conventions. With a 16:00 origin, every ES-derived input is lagged one session (scenario `eslag1`).
+  - **ES HAR is hit hardest.** It can then use only the previous day's ES session, and its 1-day QLIKE rises by 39% (0.193 to 0.268).
+  - **The forests are hit less.** On sets B–D they still see the day's market close (returns, range, implied volatility), so they now beat this weaker HAR significantly at 1 day (0.73–0.76, $p\le0.0005$).
+  - **In absolute terms nothing improves.** The best 16:00 forecast (RF B, QLIKE 0.195) is no more accurate than HAR at the 17:00 origin (0.193).
+  - **At 5 and 22 days no ES forecast beats HAR** under either convention.
+  - **SPY is unaffected** apart from set D, whose forecasts still do not beat HAR (1 day 0.96, $p=0.27$). The winning SPY forests use sets B and C, which contain no ES input.
 - **22 days: no check produces a forecast that beats HAR.** Persistence is 1.3–1.7 times worse than HAR in every scenario.
 - **The strict missing-day rule** removes about a quarter of SPY origins but leaves the conclusions unchanged, so the frozen 80%/20% rules are not driving the results.
 - **FFD lags:** the forest is again indifferent to raw or FFD lags, while the elastic net on FFD log RV alone is 1.1–2.0 times worse than HAR. Keeping the raw HAR lags matters for the linear model.
@@ -982,6 +1017,8 @@ MacKinnon, J. G. (2010). Critical values for cointegration tests. Queen's Econom
 
 Patton, A. J. (2011). Volatility forecast comparison using imperfect volatility proxies. *Journal of Econometrics*, 160(1), 246–256.
 
+Patton, A. J., & Sheppard, K. (2009). Evaluating volatility and correlation forecasts. In T. G. Andersen, R. A. Davis, J.-P. Kreiss, & T. Mikosch (Eds.), *Handbook of Financial Time Series* (pp. 801–838). Springer.
+
 Patton, A. J., & Sheppard, K. (2015). Good volatility, bad volatility: Signed jumps and the persistence of volatility. *Review of Economics and Statistics*, 97(3), 683–697.
 
 Rahimikia, E., & Poon, S.-H. (2026). Machine learning for realised volatility forecasting. SSRN Working Paper 3707796 (revised 22 January 2026).
@@ -1051,6 +1088,7 @@ Status key:
 | FFD with the smallest $d$ passing ADF, chosen inside each training window; $\tau$ and grid fixed in advance; $d^*$ and retained correlation reported (§4.3) | Done | `ffd.m`, `ffd_choose.m`, `walk_forward.m`, `ffd_*.csv` |
 | Target never transformed; raw HAR lags kept in both ML models (§4.3) | Done | `walk_forward.m` |
 | FFD variant replacing the ML lag block with FFD log RV (§4.3) | Done | scenario `ffdlags` |
+| Forecast-time convention for ES inputs (instructor's comments, 1 Nov 2026) | Done after the test: origin stated as 17:00 ET (§5); 16:00 variant as robustness | scenario `eslag1` |
 | Elastic net: $\alpha$ and $\lambda$ tuned; ridge and lasso special cases; coefficients reported (§4.6) | Done | `fit_en.m`, `explain_*.csv` |
 | Random forest; impurity importance (§4.7) | Done | `fit_rf.m` |
 | Excluded models not estimated (§4.8) | Done | — |
@@ -1107,7 +1145,7 @@ Status key:
 | FFD, $d^*$ | Fixed-width fractional differencing (eq. 5); $d^*$ is the smallest order that makes an input pass ADF |
 | Long memory, $d$ | Very slow (hyperbolic) decay of autocorrelation; $d$ is the fractional-integration order |
 | Local Whittle; $d_{\mathrm{LTM}}$ | Semiparametric estimator of $d$ (eq. 6); Bhatti's detectability-boundary estimator |
-| QLIKE | Quasi-likelihood loss (eq. 12); robust to noise in the volatility proxy |
+| QLIKE | Quasi-likelihood loss (eq. 12). Like MSE, it is robust to noise in the volatility proxy (Patton, 2011); it is primary because it depends only on the ratio of realized to forecast variance |
 | DM test | Diebold–Mariano test of equal forecast accuracy, with the HLN correction (eq. 13) |
 | MCS | Model Confidence Set: the models that cannot be distinguished from the best |
 | DiD | Difference-in-differences of losses for RQ2 (eq. 15) |
