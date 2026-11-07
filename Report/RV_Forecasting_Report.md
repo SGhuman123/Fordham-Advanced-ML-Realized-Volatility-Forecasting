@@ -549,7 +549,7 @@ The feature sets are the nested sets of Section 4.2, each adding to the one befo
 
 is searched on validation QLIKE. For each setting an ensemble of up to 1{,}000 trees is grown on the sub-window, and the number of trees is chosen by staged validation QLIKE (checkpoints every 20 trees). There is no `OptimizeHyperparameters` and no $k$-fold CV. The winning (splits, rate, leaf, trees) is refit on all training rows. Scenario `boost` estimates only GB; Persistence, HAR, elastic net and the forest are copied from the saved `main` forecasts so the comparison uses identical paths for those four models.
 
-**Scope of the numbers below.** All figures are development-period, all-model common days ($n=755$), QLIKE ÷ HAR QLIKE (lower is better), with the same bold / ✓ / † notation as Section 7.1. They are **not** locked-test results. The ES figures use the pre–PR #9 forecast timing (before the move to 5 PM ET); whether ES needs a rerun after that change is an open check.
+**Scope of the numbers below.** All figures are development-period, all-model common days ($n=755$), QLIKE ÷ HAR QLIKE (lower is better), with the same bold / ✓ / † notation as Section 7.1. They are **not** locked-test results.
 
 ### Best GB versus best RF (QLIKE ratio vs HAR)
 
