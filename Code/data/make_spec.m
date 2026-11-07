@@ -23,6 +23,10 @@ function spec = make_spec(target, scenario)
 %                      PER/HAR/EN/RF are copied from the saved 'main' forecasts of
 %                      the same phase, so only GB is estimated; output goes to its
 %                      own folder (forecasts/<phase>/boost), main is untouched
+%   eslag1     SPY/ES  16:00 ET origin: every ES-derived input (set D, and an ES
+%                      target's own lags) lagged one session. SPY runs sets A and D
+%                      only, the sets the lag can change (added after the test,
+%                      following the instructor's comments of 1 Nov 2026)
 
 spec.target        = target;
 spec.scenario      = scenario;
@@ -31,6 +35,7 @@ spec.esHoliday     = 'merge';
 spec.window        = 'expanding';
 spec.startOverride = [];
 spec.rfDefault     = false;
+spec.esLag         = 0;        % sessions of lag on ES-derived inputs (scenario 'eslag1')
 spec.strict        = false;    % strict missing-day rule (scenario 'strict')
 spec.mlOnA         = true;     % EN and RF also run on set A
 spec.sets          = {'A','B','C','D'};
@@ -63,6 +68,11 @@ switch scenario
     case 'strict'
         assert(strcmp(target,'SPY'), 'strict is a SPY-target check (ES has no missing day)');
         spec.strict = true;  spec.sets = robustSets;
+    case 'eslag1'
+        spec.esLag = 1;
+        if strcmp(target, 'SPY')
+            spec.sets = {'A','D'};  spec.mlOnA = false;   % sets A-C are unaffected
+        end
     case 'vix1996'
         assert(strcmp(target,'SPY'), 'vix1996 is a SPY-target check');
         spec.startOverride = datetime(1996,3,1);   % first full month of HAR lags

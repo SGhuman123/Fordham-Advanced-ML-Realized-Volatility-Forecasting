@@ -18,6 +18,13 @@ if strcmp(phase, 'test') && strcmp(scenario, 'boost') && ~cfg.gb.allowTest
     error(['run_job: boosting is exploratory and development-only; running it on the ' ...
            'locked test needs a team decision (cfg.gb.allowTest).']);
 end
+if strcmp(phase, 'test')
+    fcFile = fullfile(cfg.outDir, 'forecasts', phase, scenario, sprintf('%s_h%d.mat', target, h));
+    if isfile(fcFile)
+        error(['run_job: locked-test forecasts already exist (%s); refusing to ' ...
+               'overwrite. The test is run once.'], fcFile);
+    end
+end
 maxNumCompThreads(2);
 
 spec = make_spec(target, scenario);

@@ -15,6 +15,9 @@ for target = {'SPY', 'ES'}
     end
 end
 evaluate_phase(phase, 'main');
+multiple_testing(phase, 'main');
+window_check(phase);
+utility_test(phase);
 explain_rf('SPY', 22, 'D', phase);
 explain_rf('ES',  22, 'D', phase);
 long_memory(phase);
@@ -24,7 +27,8 @@ export_design;
 
 % Robustness checks (Section 6)
 robust = {'rolling', {'SPY','ES'}; 'rv15', {'SPY'}; 'qmle', {'SPY'}; 'strict', {'SPY'}; 'rv1', {'ES'}; ...
-          'rk', {'ES'}; 'holdrop', {'ES'}; 'oxford', {'SPY'}; 'vix1996', {'SPY'}; 'rfdefault', {'SPY','ES'}; 'ffdlags', {'SPY','ES'}};
+          'rk', {'ES'}; 'holdrop', {'ES'}; 'oxford', {'SPY'}; 'vix1996', {'SPY'}; 'rfdefault', {'SPY','ES'}; 'ffdlags', {'SPY','ES'}; ...
+          'eslag1', {'SPY','ES'}};
 for r = 1:size(robust, 1)
     for target = robust{r, 2}
         for h = cfg.horizons
@@ -32,4 +36,5 @@ for r = 1:size(robust, 1)
         end
     end
     evaluate_phase(phase, robust{r, 1});
+    multiple_testing(phase, robust{r, 1});
 end

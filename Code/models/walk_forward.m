@@ -49,7 +49,7 @@ for Y = years
     X = Xraw;
     dstar = zeros(1, numel(names));  rho = ones(1, numel(names));
     if any(strcmp(model, {'EN','RF','GB'}))
-        key = sprintf('%s|%s|%s|%d|%s', spec.target, spec.variant, spec.esHoliday, Y, char(string(trStart)));
+        key = sprintf('%s|%s|%s|%d|%d|%s', spec.target, spec.variant, spec.esHoliday, spec.esLag, Y, char(string(trStart)));
         for j = find(canFFD)
             [X(:, j), dstar(j), rho(j)] = ffd_cached(Xraw(:, j), names{j}, inWin(lastTrain), key, cfg);
         end

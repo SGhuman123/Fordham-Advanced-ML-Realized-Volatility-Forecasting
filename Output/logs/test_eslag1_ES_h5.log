@@ -1,0 +1,10 @@
+[test eslag1 ES h=5] PER_A  2018-2026   2193 forecasts     0.1s
+[test eslag1 ES h=5] HAR_A  2018-2026   2193 forecasts     0.1s
+[test eslag1 ES h=5] EN_A   2018-2026   2193 forecasts     0.4s
+[test eslag1 ES h=5] RF_A   2018-2026   2193 forecasts    37.5s
+[test eslag1 ES h=5] EN_B   2018-2026   2193 forecasts     0.7s
+[test eslag1 ES h=5] RF_B   2018-2026   2193 forecasts    86.6s
+[test eslag1 ES h=5] EN_C   2018-2026   2193 forecasts     0.5s
+[test eslag1 ES h=5] RF_C   2018-2026   2193 forecasts   103.5s
+[test eslag1 ES h=5] EN_D   2018-2026   2193 forecasts     0.6s
+[test eslag1 ES h=5] RF_D   2018-2026   2193 forecasts   112.7s
