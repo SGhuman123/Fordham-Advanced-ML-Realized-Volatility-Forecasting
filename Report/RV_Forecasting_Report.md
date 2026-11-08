@@ -606,6 +606,24 @@ The table gives the QLIKE gain from set A to set $s$, as a % of each model's set
 - **Clean cases.** Two comparisons do not rely on an elastic-net breakdown. For SPY at 5 days, A→B, both models gain, the forest +16% and the elastic net +4% ($p=0.003$). For ES at 1 day, A→D, the forest gains +15% while the elastic net loses 7% ($p<0.001$), so the forest uses the ES jump and semivariance block better.
 - **22 days.** Richer features help neither model, and the DiD is not significant.
 
+**What each feature block does to the forest.** The DiD compares the forest with the elastic net. The table below looks at the forest alone: the change in its test QLIKE as each block is added, on the all-model common days of Section 8.1 (positive = lower loss).
+
+| Target | $h$ | A → B (market) | B → C (macro, stress) | C → D (ES measures) | Best forest set |
+|---|---|---|---|---|---|
+| SPY | 1 | +13% | +1% | −9% | C (0.846) |
+| SPY | 5 | +16% | −5% | −23% | B (0.883) |
+| SPY | 22 | +3% | +1% | −22% | C (1.043) |
+| ES | 1 | +7% | +4% | +4% | D (0.968) |
+| ES | 5 | +2% | −8% | +26% | D (1.057) |
+| ES | 22 | −10% | −4% | +13% | D (1.213) |
+
+*Last column: the forest's best set and its QLIKE ratio vs HAR. Source: `loss_*.csv`; importance shares below from `explain_*.csv`, averaged over the nine test re-fits.*
+
+- **The market block does almost all the work.** Adding it cuts the SPY forest's loss by 13% at 1 day and 16% at 5 days, the step that turns the forest from level with HAR into a significant winner. It also holds 79–83% of the importance in every set-C forest at 1 and 5 days, mostly through the implied-vol term slope (Section 8.7).
+- **Macro and stress indices add little.** The B → C step moves the loss by −8% to +4%. These features take 2–6% of the importance at 1 and 5 days. At 22 days the SPY forest gives them 21% of its importance, yet they improve the loss by only 1%.
+- **The ES block helps the ES target but hurts SPY.** For ES, every set trains from 2010, so C → D is a clean feature effect: +4%, +26% and +13% at 1, 5 and 22 days. For SPY the same step also shortens the training window from 2005 to 2010, dropping the 2008 crisis. The loss then rises by 9–23%, and the March 2020 failure of the set-D forests follows (Section 8.5). The two effects cannot be separated within the frozen design.
+- **Richer is not always better for the forest.** Its best set is C, B and C for SPY and D at every ES horizon. Even with the ES block added, the market block keeps 52–62% of the importance, against 29–32% for the ES measures.
+
 ## 8.4 RQ3: ES target and the variance-swap check ($h=22$)
 
 The table gives the mean P&L per 22-day variance-swap trade (vol-points², actual close-to-close payoff) with its $t$-statistic, and $\rho$, the correlation between the forecast signal $K-F$ and the realized payoff $K-\text{realized}$.
@@ -703,6 +721,41 @@ Averaged over the nine test re-fits (impurity importance for the forests, coeffi
 - **ALE curves** (Figure 6) are steep at low values and flat beyond the training range: the forest cannot extrapolate.
 
 ![*Figure 6.* Accumulated local effects of the six most important features, random forest on set D, SPY target, $h=22$ (2026 re-fit).](figures/ale_test_SPY_h22_D_2026.png){width=80%}
+
+**Spike days: what moves the winning forest (added after the test).** The averages above do not say what drives a forecast on a given day. We therefore computed day-level Shapley values for the winning forest (SPY, $h=1$, set C) before, at and after the three largest test episodes.
+
+- **Method.** `evaluation/explain_spikes.m` rebuilds each fold's forest as `walk_forward.m` built it: same training rows, features, FFD orders, median fill, tuned hyperparameters and random seed.
+  - The rebuilt 2020, 2022 and 2025 forests reproduce their saved forecasts exactly (largest difference 0), so the values explain the forecasts that were scored. No forecast changes.
+  - Shapley values are interventional kernel SHAP, with 100 training rows as the background.
+  - A feature's share below is its Shapley value divided by the push from the baseline (the average forecast on the background, about 12–14% vol) to that day's forecast.
+
+| Origin | Forest | HAR | Realized next day | Largest contributions (share of the push) |
+|---|---|---|---|---|
+| 26 Feb 2020 | 33% | 20% | 43% | weekly negative returns 28%, today's RV 17%, IV term slope 12% |
+| 27 Feb 2020 | 44% | 30% | 62% | IV term slope 22%, weekly negative returns 20%, today's RV 16% |
+| 11 Mar 2020 | 57% | 38% | 98% | IV term slope 38%, weekly negative returns 19%, today's RV 7% |
+| 16 Mar 2020 | 80% | 68% | 76% | IV term slope 23%, log VXN 15%, weekly negative returns 12% |
+| 15 Apr 2020 | 31% | 30% | 22% | IV term slope 19%, log VXN 14%, today's RV 10% |
+| 15 May 2020 | 23% | 20% | 12% | log VXN 24%, ADS 12%, today's RV 11% |
+| 3 Apr 2025 | 25% | 17% | 45% | IV term slope 21%, today's RV 19%, ATM 1M IV 19% |
+| 4 Apr 2025 | 50% | 31% | 102% | IV term slope 48%, today's RV 27%, weekly negative returns 12% |
+| 8 Apr 2025 | 64% | 49% | 72% | IV term slope 60%, weekly negative returns 17%, today's RV 11% |
+
+*Volatility in annualized %. Calm days with a very small push (21 Feb 2020, 12 Sep 2022, 25 Apr 2025, 15 May 2025) are in the output file but left out here, because their shares are unstable.*
+
+- **Going up.** An inverted implied-vol term structure leads the push, followed by recent negative returns and today's realized variance. At the 16 March 2020 peak, 1-month IV stood 39 vol points above 1-year IV, against a training median of 3.6 points the other way.
+- **Ahead of HAR.** These inputs move before realized variance, so at the start of each episode the forest forecast 25–50% when HAR said 17–31% (26–27 Feb 2020, 3–4 Apr 2025). It still under-forecast the largest days (98% on 11 March 2020, 102% on 4 April 2025).
+- **Coming down.** The term slope and negative returns fade first. In 2025 most of the push was gone within about two and a half weeks (64% on 8 April, 16% on 25 April); in 2020 it took longer (80% on 16 March, still 31% on 15 April). In 2020, Nasdaq implied vol (log VXN) and weak business conditions (ADS) kept the forecast above realized volatility into May.
+- **Caveats.** Kernel SHAP is an approximation, and correlated inputs (the term slope and ATM 1-month IV) can share credit between them.
+
+**A data error found by this analysis.** On 20 September 2022 the forest forecast 48% against HAR's 16%. 95% of that push came from the IV term slope, at −22.5 against a training median of 3.6.
+
+- **The cause is a one-day error in the raw Bloomberg surface** (`iv_surface.mat`). The 1-month ATM IV is 47.3, against 24.2 the day before and 26.7 the day after. Only the 1-month tenor moves: the 2-month to 2-year tenors stay near 25, and VIX closed at 27.2.
+- **It happened to help the forest.** The next day brought a 75 bp FOMC hike and realized volatility of 41%. That day, HAR's QLIKE was 3.72 and the forest's 0.04.
+- **Effect on the results** (`evaluation/iv_glitch_check.m`):
+  - Dropping the origin moves the headline SPY 1-day RF C ratio only from 0.846 to 0.852 ($p$ from $6\times10^{-7}$ to $1\times10^{-6}$).
+  - It moves the 2022 bear-market ratios in Section 8.5 from 0.66–0.68 to 0.73–0.76; they stay significant.
+- **It is disclosed, not corrected.** The error is in the frozen input data, so the frozen results keep it.
 
 ## 8.8 Memory in forecast errors
 
@@ -927,7 +980,7 @@ All code is one MATLAB pipeline in `Code/` (MATLAB R2026a with the Statistics an
 | Elastic net | `models/fit_en.m` (`lasso` with Alpha, plus closed-form ridge) |
 | Random forest | `models/fit_rf.m` (`TreeBagger`, `bayesopt`) |
 | Walk-forward and scenarios | `models/walk_forward.m`, `run_job.m`, `data/make_spec.m` (main and robustness scenarios), `rv_config.m` (every setting and the test lock) |
-| Evaluation and explanation | `evaluation/evaluate_phase.m`, `qlike.m`, `dm_test.m`, `mcs.m`; `evaluation/multiple_testing.m`, `holm_rq2_check.m`, `holm_adjust.m` (Holm corrections from the saved tables); `evaluation/window_check.m`, `utility_test.m`, `load_forecasts.m` (complete-window check; utility tests); `evaluation/explain_rf.m` (Shapley, ALE) |
+| Evaluation and explanation | `evaluation/evaluate_phase.m`, `qlike.m`, `dm_test.m`, `mcs.m`; `evaluation/multiple_testing.m`, `holm_rq2_check.m`, `holm_adjust.m` (Holm corrections from the saved tables); `evaluation/window_check.m`, `utility_test.m`, `load_forecasts.m` (complete-window check; utility tests); `evaluation/explain_rf.m` (Shapley, ALE); `evaluation/explain_spikes.m` (day-level Shapley on spike days), `iv_glitch_check.m` (20 Sep 2022 IV error) |
 | Drivers and report | `run_parallel.sh`, `main.m`; `evaluation/report_figures.m`, `Report/build_report.py` |
 
 **How to run.**
@@ -1130,6 +1183,8 @@ Status key:
 | `.../stationarity.csv`, `long_memory_*.csv`, `long_memory_acf.png` | ADF/KPSS diagnostics with development $d^*$; long-memory estimates and memory in forecast errors |
 | `.../success_criterion.csv`, `loss_ratios_vs_HAR.csv` | Success scorecard (with Persistence floor); every loss ratio in one table |
 | `.../holm_ml_vs_har.csv`, `holm_scorecard.csv`, `holm_varswap.csv` | Holm-adjusted p-values: every ML forecast vs HAR (QLIKE and one-sided MSE), the scorecard rows, the variance-swap timing rules |
+| `Output/tables/test/main/spike_shap_SPY_h1_C.csv` | Day-level Shapley values of the winning forest on spike days, with each feature's share of the push and its value (Section 8.7) |
+| `Output/tables/test/main/iv_glitch_check.csv` | Headline and 2022 bear-market ratios with and without 20 Sep 2022 (Section 8.7) |
 | `.../window_check.csv`, `window_counts.csv` | Complete-window vs partial-window scores (Section 8.12) and the observed days in each retained target window |
 | `.../utility_tests.csv` | Daily-utility DM tests against HAR, with gains in basis points and Holm-adjusted $p$ (Section 8.6) |
 | `Output/tables/audit_*.csv` | Missing-data counts, the test-origin table of proposal 3.2 and the Risk Lab vs Oxford-Man cross-check |

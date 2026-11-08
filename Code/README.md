@@ -49,6 +49,8 @@ run once. Anything changed after that is exploratory.
 | | `evaluation/window_check.m`, `load_forecasts.m` | Complete-window vs partial-window re-scoring of the saved forecasts, with observed-day counts (`window_check.csv`, `window_counts.csv`); nothing re-estimated |
 | | `evaluation/utility_test.m` | DM tests on daily vol-targeting utility differences against HAR, Holm-adjusted (`utility_tests.csv`); nothing re-estimated |
 | | `evaluation/explain_rf.m` | Shapley values and ALE for the last-fold random forest |
+| | `evaluation/explain_spikes.m` | Day-level Shapley values for one forest on chosen origins (default: SPY, h = 1, set C, around the 2020, 2022 and 2025 spikes). Rebuilds each fold's forest exactly and errors unless it reproduces the saved forecasts (`spike_shap_*.csv`) |
+| | `evaluation/iv_glitch_check.m` | The one-day 1-month IV error on 20 Sep 2022 in `iv_surface.mat`: raw surface around it and the results with and without that origin (`iv_glitch_check.csv`) |
 | | `evaluation/report_figures.m` | Pipeline and walk-forward diagrams for the report |
 
 ## Robustness scenarios (`data/make_spec.m`)
