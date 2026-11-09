@@ -474,6 +474,7 @@ EQNUM(16)
 - **Timing rule:** sell variance when the annualized forecast is below $K_t$; buy otherwise.
 - **SPY adjustment:** SPY RV omits the overnight move, so SPY forecasts are rescaled by the training ratio of mean squared close-to-close return to mean RV.
 - **Payoffs:** the actual close-to-close payoff is reported alongside.
+- **Timing:** the strike and payoff start at the day-$t$ close, before the 17:00 ET origin (Section 5).
 
 # 7. Results: Development Period (2005–2017)
 
@@ -524,11 +525,11 @@ The design entering the test was the proposal's specification, unchanged, with t
 
 The frozen code is git tag `design-freeze`. The test was then run once for the main design and every robustness scenario.
 
-**Team review of the freeze (31 October 2026).**
+**Team review of the freeze (31 October 2026, confirmed in writing 4–5 November).**
 
 - **Timeline.** The design was frozen and the test run on the same evening, 21 October 2026: the `design-freeze` tag was created at 21:43 and the test results committed at 23:51. The pull request that merged them had no recorded review.
-- **The review.** On 31 October 2026 the three team members reviewed each of the four decisions above and agreed to report them as they ran. This is a review made **after** the test, not approval given before it.
-- **A check made at the same time.** The 60% window for `overnight_w` (Section 3.2) was confirmed to be already in the frozen code.
+- **The review.** The team discussed the four decisions above at its meeting on 31 October 2026, without completing an item-by-item sign-off there. Robin and Aryan confirmed them in writing on 4–5 November 2026, when they approved this note (pull request #9), which James proposed. The team reports the decisions as they ran. This is a review made **after** the test, not approval given before it.
+- **A check made afterwards.** The 60% window for `overnight_w` (Section 3.2) was left open at the meeting and later confirmed to be already in the frozen code (`build_design.m`, line 136, at tag `design-freeze`).
 
 # 8. Results: Locked Test (2018 – October 2026)
 
@@ -550,7 +551,7 @@ Every number in this section comes from the single run of the frozen design. Re-
 - **ES: nothing beats HAR at any horizon.** The best ratios are 0.968 (RF D, 1 day) and 0.984 (EN D, 5 days), neither significant. The ES forests on sets A–C are 23–43% *worse* than HAR at 5 and 22 days.
 - **HAR beats Persistence everywhere.** Persistence is 21–56% worse than HAR, and HAR's advantage is significant at every horizon for both targets ($p\le0.04$; Section 8.2). This reverses the development window, where calm 2015–2017 flattered Persistence.
 - **The MCS rarely discriminates.** HAR is in the 10% MCS in every case. The MCS removes the worst forecasts (Persistence at short SPY horizons, the elastic net on SPY set D) but cannot separate HAR from the winning forests.
-- **MSE: much weaker evidence.** The loss tables give a two-sided DM p-value for MSE but a one-sided one for QLIKE, so the two columns are not directly comparable.
+- **MSE: much weaker evidence.** This report quotes a two-sided DM p-value for MSE but a one-sided one for QLIKE, so the two are not directly comparable.
   - *Two-sided:* no improvement over HAR is significant anywhere. The best SPY 1-day ratio is RF C at 0.69 ($p=0.08$).
   - *One-sided* (the test used for QLIKE): RF C at 1 day is nominally significant ($p=0.04$), the only such case among the 48 ML forecasts. It does not survive the Holm correction of Section 8.10 (adjusted $p=1.00$; `holm_ml_vs_har.csv`).
   - Every forecast stays in the MSE MCS.
@@ -746,7 +747,7 @@ What the checks show:
 
 - **The SPY short-horizon result is robust where the training history includes 2008.** The 1-day forest gain over HAR (0.83–0.89) survives the alternative SPY targets (15-min RV, QMLE), the strict missing-day rule, untuned forests, FFD lags and the 1996 start. At 5 days it survives 15-min RV, the strict rule, FFD lags and the 1996 start.
 - **It weakens with a rolling window.** A 10-year rolling window drops 2008 from SPY training after the 2018 re-fit, and the 1-day forest gain shrinks to 0.93, no longer significant. This is the same training-history effect as the COVID failure (Section 8.5).
-- **ES: no check produces a significant gain over HAR, with one exception.** The untuned forest on set D (0.91 at 1 day) does, which suggests that the tuned ES forests were over-fitted to calm validation years. The alternative ES targets, the holiday-row treatment and the rolling window change nothing material.
+- **ES at the 17:00 origin: no check produces a significant gain over HAR, with one exception.** The untuned forest on set D (0.91 at 1 day) does, which suggests that the tuned ES forests were over-fitted to calm validation years. The alternative ES targets, the holiday-row treatment and the rolling window change nothing material. The 16:00 variant is a different comparison and is covered next.
 - **The ES forecast-time convention matters for ES at 1 day.** This check was added after the test, following the instructor's comments; Section 5 explains the two conventions. With a 16:00 origin, every ES-derived input is lagged one session (scenario `eslag1`).
   - **ES HAR is hit hardest.** It can then use only the previous day's ES session, and its 1-day QLIKE rises by 39% (0.193 to 0.268).
   - **The forests are hit less.** On sets B–D they still see the day's market close (returns, range, implied volatility), so they now beat this weaker HAR significantly at 1 day (0.73–0.76, $p\le0.0005$).
@@ -897,7 +898,7 @@ The team kept the proposal's specification rather than add a guard after seeing 
 4. **Short ES history.** ES and set D start in 2010, so their training windows contain no crisis before 2020.
 5. **Tuning noise.** Twelve Bayesian-optimization steps with one seed make the forest's hyperparameters noisy across years.
 6. **Data gaps.** There are no limit-order-book or news-text data; ES session times are inferred; pre-December-2008 ADS is the revised vintage (training rows only).
-7. **A stylized variance-swap check.** VIX² only approximates the strike, and there are no costs. A trade opens every day, so positions overlap (the $t$-statistics allow for this). The check uses the 22-day forecasts only, and passing it requires only a positive correlation, not a profit (Section 8.4).
+7. **A stylized variance-swap check.** VIX² only approximates the strike, and there are no costs. A trade opens every day, so positions overlap (the $t$-statistics allow for this). The check uses the 22-day forecasts only, and passing it requires only a positive correlation, not a profit (Section 8.4). Its strike and payoff start at the day-$t$ close, before the 17:00 ET forecast origin; that convention was stated after the instructor's comments of 1 November 2026 (Section 5).
 8. **Many tests.** Two Holm–Bonferroni checks were added after the test. Both read the saved outputs only.
    - *ML versus HAR* (`Code/evaluation/multiple_testing.m`): across the 48 one-sided QLIKE tests, the 1-day SPY forest gains stay significant but the 5-day one does not (Section 8.10).
    - *RQ2* (`Code/evaluation/holm_rq2_check.m`): with the three set steps per target and horizon as the family, every 5% result is unchanged. All 1- and 5-day differences-in-differences stay significant (adjusted p ≤ 0.004) except ES 5-day A→D (0.098, not significant before adjustment either), and no 22-day one is significant (adjusted p ≥ 0.19).
@@ -1082,7 +1083,7 @@ Status key:
 | Late starts from first date + $\ell_\tau$; common days only (§3.2) | Done for raw and FFD values. Model inputs differ: once a feature enters a fold, its rows before the start date get the training median (report §3.2) | `ffd.m`, `walk_forward.m`, `evaluate_phase.m` |
 | Missing-day counts measured (§3.2) | Done (reproduced exactly) | `data_audit.m` |
 | Missing-day treatment (§3.2: "will be decided") | Done (rules frozen before the test; no target filled from another source; multi-day targets average the observed days; strict-rule robustness; complete-window check added after the test, Section 8.12) | `rv_config.m`, `data/build_design.m`; scenario `strict`; `evaluation/window_check.m` |
-| ES holiday rows rolled forward; dropping as robustness (§3.2) | Done | `data/load_panel.m`; scenario `holdrop` |
+| ES holiday rows rolled forward; dropping as robustness (§3.2) | Done as frozen; the instructor's confirmation, asked for on 16 October 2026, is still pending (report §3.2) | `data/load_panel.m`; scenario `holdrop` |
 | Linear forecasts floored at the training-window minimum RV (§4.1) | Done | `fit_har.m`, `fit_en.m` |
 | ADF and KPSS on every target and input, levels and logs, development sample only (§4.3) | Done (coded directly; Econometrics Toolbox not installed) | `adf_test.m`, `kpss_test.m`, `stationarity.m` |
 | Local Whittle and Bhatti's detectability-boundary estimator for RV memory (§4.3) | Done | `long_memory.m` |
@@ -1122,6 +1123,7 @@ Status key:
 | `Output/data/design_SPY.csv`, `design_ES.csv`, `feature_dictionary.csv` | The modelling dataset (targets and features A–D per origin) and the feature dictionary |
 | `Output/forecasts/<phase>/<scenario>/<target>_h<h>.mat` | Every forecast, with per-fold hyperparameters, kept features, coefficients, importances and FFD orders |
 | `Output/tables/<phase>/<scenario>/summary.md` | All tables for a scenario in one readable file |
+| `Output/forecasts/<phase>/eslag1/`, `Output/tables/<phase>/eslag1/` | The 16:00-origin check with ES inputs lagged one session (added after the test; Section 8.9) |
 | `.../loss_*.csv`, `loss_noD_*.csv` | Accuracy, DM against HAR and Persistence, MCS; sets A–C on the longer SPY development sample |
 | `.../rq1_*.csv`, `rq2_*.csv` | RQ1 pairwise tests (Persistence, HAR, EN, RF); RQ2 difference-in-differences |
 | `.../regimes_*.csv`, `utility_*.csv`, `varswap_*_h22.csv` | Regimes and episodes; vol-targeting utility; variance swap |
