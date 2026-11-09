@@ -92,7 +92,7 @@ This separates two questions: is ML better because it is *non-linear*, or becaus
 - **SPY at 22 days, and ES at every horizon:** no model significantly beats HAR. The ES forests, trained only on post-2009 data, **failed in the 2020 COVID spike**.
 - **HAR beats Persistence at every horizon,** for both targets. This reverses the calm development window.
 - **RQ1:** with volatility history alone (set A), neither ML model beats HAR. Gains shrink with the horizon instead of growing.
-- **RQ2:** the forest gains significantly more than the elastic net from richer features at 1 and 5 days, largely because the elastic net degrades.
+- **RQ2:** the forest gains significantly more than the elastic net from richer features at 1 and 5 days. The difference reflects both the forest's own improvement and the elastic net's deterioration.
 - **RQ3:** the full-session ES target does **not** line up better with the variance-swap payoff.
 
 **Implementation.** MATLAB, as the course requires. One command reruns everything from the cleaned data.
@@ -244,7 +244,7 @@ All data were downloaded and cleaned by Robin, and are in `Realize Volatility Da
 | 22 | 2,179 | 532 | 19 | 510 |
 
   How these are handled was frozen before the test (Section 5.1).
-- **ES holidays.** ES has 121 extra Globex holiday rows. We add their variance to the next NYSE day, so each target spans one close-to-close interval. The team froze this rule before the test; dropping the rows instead is a robustness check (`holdrop`).
+- **ES holidays.** ES has 121 extra Globex holiday rows. We add their variance to the next NYSE day, so each target spans one close-to-close interval. The team froze this rule before the test; dropping the rows instead is a robustness check (`holdrop`). The instructor considered this reasonable (7 Nov 2026).
 - **ES vs SPY.** ES RV ≈ 1.7× SPY RV, because of the overnight move.
 - **The SPY target cross-check.** Risk Lab SPY RV and Oxford-Man S&P 500 RV correlate at 0.968 over 4,293 common days (`data_audit.m`).
 - **The calendar file.** v5.4 names `nyse_trading_calendar_1990_2026.csv`, but **that file is not in the data folder**. We use the dates in `features_daily.csv`, which Robin's QC verified are identical to the NYSE calendar through 6 Oct 2026. The missing file would only add future sessions, which no forecast uses.
@@ -603,7 +603,7 @@ Gain from set A to set s, as a % of each model's set-A loss; the DiD and its one
 | ES | 22 | A→B / A→C / A→D | −21% / −27% / −26% | −10% / −14% / +1% | +0.03 / +0.04 / +0.11 | 0.29 / 0.29 / 0.064 |
 
 - **Answer:** the forest gains significantly more than the EN at 1 and 5 days, for both targets. The hypothesis is supported at short horizons, not at 22 days.
-- **Two mechanisms.** In most significant cases the forest improves while the EN gets *worse*. So part of the DiD is EN fragility, not extra information found by the forest.
+- **Two mechanisms, both real.** Of the 11 significant cells, the forest's own loss falls in 9 (by 2–16%) and the EN's rises in 10. Example, SPY 1 day A→B: forest −13%, EN +35%. The forest does improve, but where the EN breaks down, most of the DiD's size comes from that.
 - **The clean cases** don't rely on an EN breakdown:
   - SPY, 5 days, A→B: both gain, the forest +16% and the EN +4% (p = 0.003);
   - ES, 1 day, A→D: the forest gains +15% while the EN loses 7% (p < 0.001). The forest uses the ES jump and semivariance block better.
@@ -747,7 +747,7 @@ The `strict` rule removes about a quarter of the SPY 22-day test origins (2,160 
 | 1-day ML gain over HAR | Large for both targets (forest 0.61–0.81) | SPY only (forest 0.85); ES none |
 | Set-A forest vs HAR | Beats HAR at 1 day | Does not beat HAR |
 | HAR vs Persistence | Not significantly better | Significantly better at every horizon |
-| RQ2 (forest gains more) | Only where the EN breaks | Yes at 1 and 5 days, partly through EN fragility |
+| RQ2 (forest gains more) | Only where the EN breaks | Yes at 1 and 5 days, through both forest improvement and EN deterioration |
 | RQ3 (ES aligns better with swaps) | Directionally yes | No |
 | Gains grow with the horizon | No | No |
 
@@ -968,7 +968,7 @@ A forest forecasts averages of training targets, so it can't go above the highes
 Collinear implied-vol levels plus almost no penalty give offsetting coefficients. When those features move outside their training range, forecasts go negative and get floored (or overshoot), and QLIKE punishes that heavily. FFD doesn't help, because those inputs aren't unit-root. On the test this hit SPY set D and ES sets B and C. The team chose to keep the EN as specified and report this.
 
 **Q: Does the forest really extract more from extra features (RQ2)?**
-At 1 and 5 days the DiD is significant for both targets, but often because the EN gets worse. The clean cases are SPY 5 days A→B and ES 1 day A→D, where the forest gains clearly more.
+At 1 and 5 days the DiD is significant for both targets. It reflects both the forest improving (in 9 of the 11 significant cells) and the EN getting worse (in 10). The clean cases are SPY 5 days A→B and ES 1 day A→D, where the forest gains clearly more.
 
 **Q: Does implied volatility help?**
 Yes, through its **shape** more than its level. The IV term slope (1Y − 1M) is the winning SPY forests' top input (31–39% of importance at 1 and 5 days). The VIX9D − VIX spread leads only in forests trained from 2010 (27%, none of them winners), partly because it is median-filled before 2011 in the longer SPY training windows. VIX3M − VIX has the EN's largest 22-day coefficient.

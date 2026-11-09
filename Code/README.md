@@ -50,6 +50,7 @@ run once. Anything changed after that is exploratory.
 | | `evaluation/utility_test.m` | DM tests on daily vol-targeting utility differences against HAR, Holm-adjusted (`utility_tests.csv`); nothing re-estimated |
 | | `evaluation/explain_rf.m` | Shapley values and ALE for the last-fold random forest |
 | | `evaluation/report_figures.m` | Pipeline and walk-forward diagrams for the report |
+| | `evaluation/importance_chart.m` | Feature-importance chart for the winning SPY 1-day forests, from the saved forecasts |
 
 ## Robustness scenarios (`data/make_spec.m`)
 
