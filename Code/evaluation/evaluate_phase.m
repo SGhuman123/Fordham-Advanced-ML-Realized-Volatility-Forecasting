@@ -153,7 +153,8 @@ end
 function A = align_forecasts(R)
 keys = fieldnames(R)';
 order = {'PER_A','HAR_A','EN_A','RF_A','EN_B','RF_B','EN_C','RF_C','EN_D','RF_D','EN_COM','RF_COM','EN_AV','RF_AV', ...
-         'EN_AL','RF_AL','EN_BL','RF_BL','EN_CL','RF_CL','EN_DL','RF_DL'};
+         'EN_AL','RF_AL','EN_BL','RF_BL','EN_CL','RF_CL','EN_DL','RF_DL', ...
+         'GB_A','GB_B','GB_C','GB_D'};
 [~, o] = sort(cellfun(@(k) find([strcmp(order, k), true], 1), keys));
 keys = keys(o);
 dates = [];

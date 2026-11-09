@@ -48,7 +48,7 @@ for Y = years
     % ---- inputs: FFD with d* chosen on this training window only -------------------
     X = Xraw;
     dstar = zeros(1, numel(names));  rho = ones(1, numel(names));
-    if any(strcmp(model, {'EN','RF'}))
+    if any(strcmp(model, {'EN','RF','GB'}))
         key = sprintf('%s|%s|%s|%d|%d|%s', spec.target, spec.variant, spec.esHoliday, spec.esLag, Y, char(string(trStart)));
         for j = find(canFFD)
             [X(:, j), dstar(j), rho(j)] = ffd_cached(Xraw(:, j), names{j}, inWin(lastTrain), key, cfg);
@@ -74,7 +74,7 @@ for Y = years
         Xk(isnan(Xk(:, j)), j) = med(j);
     end
 
-    seed = cfg.seed + 1000 * (Y - 2000) + 10 * h + find(strcmp(model, {'HAR','EN','RF','PER'}));
+    seed = cfg.seed + 1000 * (Y - 2000) + 10 * h + find(strcmp(model, {'HAR','EN','RF','PER','GB'}));
     Xtr = Xk(tr,:);  ytr = y(tr);
     s = sub(tr);  v = val(tr);
     floorTr  = min(Dz.rv(inWin(lastTrain)));
@@ -88,6 +88,8 @@ for Y = years
             M = fit_en(Xtr, ytr, s, v, cfg, floorSub, floorTr);
         case 'RF'
             M = fit_rf(Xtr, ytr, s, v, cfg, seed);
+        case 'GB'
+            M = fit_gb(Xtr, ytr, s, v, cfg, seed, floorSub, floorTr);
     end
     if strcmp(model, 'PER')
         [f, floored] = M.predict(idx(te));
