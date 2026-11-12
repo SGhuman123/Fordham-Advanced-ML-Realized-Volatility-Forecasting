@@ -52,6 +52,7 @@ run once. Anything changed after that is exploratory.
 | | `evaluation/explain_spikes.m` | Day-level Shapley values for one forest on chosen origins (default: SPY, h = 1, set C, around the 2020, 2022 and 2025 spikes). Rebuilds each fold's forest exactly and errors unless it reproduces the saved forecasts (`spike_shap_*.csv`) |
 | | `evaluation/iv_glitch_check.m` | The one-day 1-month IV error on 20 Sep 2022 in `iv_surface.mat`: raw surface around it and the results with and without that origin (`iv_glitch_check.csv`) |
 | | `evaluation/report_figures.m` | Pipeline and walk-forward diagrams for the report |
+| | `evaluation/importance_chart.m` | Feature-importance chart for the winning SPY 1-day forests, from the saved forecasts |
 
 ## Robustness scenarios (`data/make_spec.m`)
 
@@ -66,5 +67,6 @@ run once. Anything changed after that is exploratory.
 | `vix1996` | SPY | HAR lags + log VIX, sample from 1996 |
 | `rfdefault` | SPY, ES | Random forest with untuned Breiman defaults (500 trees, leaf 5, p/3) |
 | `ffdlags` | SPY, ES | The ML lag block is replaced by FFD log RV (proposal 4.3 robustness); Persistence and HAR stay on raw lags |
+| `eslag1` | SPY, ES | 16:00 ET origin: every ES-derived input, and an ES target's own lags, lagged one session; SPY runs sets A and D only (added after the test) |
 
 Every implementation choice the proposal leaves open is listed in Section 11 of the report.
