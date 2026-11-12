@@ -819,7 +819,7 @@ Averaged over the nine test re-fits (impurity importance for the forests, coeffi
 | 4 Apr 2025 | 50% | 31% | 102% | IV term slope 48%, today's RV 27%, weekly negative returns 12% |
 | 8 Apr 2025 | 64% | 49% | 72% | IV term slope 60%, weekly negative returns 17%, today's RV 11% |
 
-*Volatility in annualized %. Calm days with a very small push (21 Feb 2020, 12 Sep 2022, 25 Apr 2025, 15 May 2025) are in the output file but left out here, because their shares are unstable.*
+*Volatility in annualized %. Calm days with a very small push (21 Feb 2020, 12 Sep 2022, 2 Apr 2025, 25 Apr 2025, 15 May 2025) are in the output file but left out here, because their shares are unstable.*
 
 - **Going up.** An inverted implied-vol term structure leads the push, followed by recent negative returns and today's realized variance. At the 16 March 2020 peak, 1-month IV stood 39 vol points above 1-year IV, against a training median of 3.6 points the other way.
 - **Ahead of HAR.** These inputs move before realized variance, so at the start of each episode the forest forecast 25–50% when HAR said 17–31% (26–27 Feb 2020, 3–4 Apr 2025). It still under-forecast the largest days (98% on 11 March 2020, 102% on 4 April 2025).
@@ -1000,7 +1000,7 @@ EQNUM(17)
 - **Limits.**
   - Under MSE the ES combinations are still 1.13–1.30 times worse than HAR at 1 and 5 days, because the March 2020 misses still dominate a squared loss.
   - The MCS keeps every combination, every forest and HAR on the test, so it does not separate them.
-- **Development-chosen weights do worse.** The calm development years favour the forest, so the development rule picks $w=0.75$ in 18 of the 24 cells. On the test this rule has only 5 combinations that beat HAR after Holm, against 9 for equal weights. At ES 1 day the COVID ratios rise to 1.41–1.93. On development data itself the forest alone beats the equal-weight combination at 1 day (by 4–16%).
+- **Development-chosen weights do worse.** The calm development years favour the forest, so the development rule picks $w=0.75$ in 18 of the 24 cells. On the test this rule has only 5 combinations that beat HAR after Holm, against 9 for equal weights. At ES 1 day the COVID ratios rise to 1.41–1.93. On development data itself the forest alone beats the equal-weight combination at 1 day (by 3.5–16%).
 - **Reading.** A fixed 50/50 combination keeps most of the forest's gain where the forest works (SPY, 1 and 5 days) and protects against the training-history failure where it does not (ES, set D). It does not help at 22 days. Because the weights and the idea came after the test, this is evidence for future work, not a test of the frozen design.
 
 Outputs: `ensemble.csv` (both phases and both weight rules) and `ensemble_weights.csv` (development QLIKE for each weight) in `Output/tables/test/main/`.
