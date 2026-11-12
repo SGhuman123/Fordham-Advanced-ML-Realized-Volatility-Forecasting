@@ -19,7 +19,7 @@ abstract: |
   - **SPY, 1 and 5 days:** the random forest on market features (set B or C) cuts QLIKE by 12–15% against HAR, significantly, and stays in the Model Confidence Set. The design's success criterion is met. After a Holm correction across all 48 machine-learning-versus-HAR tests, the 1-day gain remains significant and the 5-day gain does not. The gains hold under QLIKE only: under MSE, none survives the correction. The variance-swap part of the criterion asks only for a positive correlation, and the scorecard's 22-day forecasts earn less than always selling variance.
   - **SPY 22 days and every ES horizon:** no model significantly beats HAR. The ES forests, trained on post-2009 data only, fail badly in the 2020 COVID spike.
   - **Benchmarks:** HAR beats naive Persistence at every horizon for both targets, reversing the calm 2015–2017 development window.
-  - **RQ2:** the forest gains significantly more than the elastic net from richer features at 1 and 5 days, largely because the elastic net degrades.
+  - **RQ2:** the forest gains significantly more than the elastic net from richer features at 1 and 5 days. The difference reflects both the forest's own improvement and the elastic net's deterioration.
   - **RQ3:** the full-session ES target does not align better with the variance-swap payoff.
   - **Horizon:** gains shrink with the horizon instead of growing.
 ---
@@ -159,7 +159,7 @@ Pre-2005 Risk Lab data enter only a VIX-only robustness check.
   4. on a day when a daily input has no value (e.g. a bond holiday), its last published value is used for at most 5 sessions (10 for weekly series), which uses no future information. This departs from proposal §3.2, which says daily series "are not forward-filled". The rule was fixed before the test and is listed in Appendix B.
 
   None of these affects the development results, because development has no missing Risk Lab days. A **strict** alternative is run as a robustness check (scenario `strict`): any origin whose target or 22-day lag window touches a missing day is dropped. On the test this removes about a quarter of the SPY 22-day origins (2,160 → 1,647).
-- **ES holiday sessions.** VOLARE has 121 rows on non-NYSE dates (abbreviated Globex holiday sessions). Their variance is rolled into the next NYSE day, so each target spans one close-to-close interval; dropping them is a robustness check (scenario `holdrop`). Proposal §3.2 left this treatment "pending the professor's confirmation". We asked on 16 October 2026, and the instructor's comments of 1 November did not address it, so it is still unconfirmed. The frozen treatment is kept, and dropping the rows leaves the ES conclusions unchanged (Section 8.9).
+- **ES holiday sessions.** VOLARE has 121 rows on non-NYSE dates (abbreviated Globex holiday sessions). Their variance is rolled into the next NYSE day, so each target spans one close-to-close interval; dropping them is a robustness check (scenario `holdrop`). Proposal §3.2 left this treatment "pending the professor's confirmation". The instructor considered the treatment reasonable when the team reviewed it with him on 7 November 2026. Dropping the rows leaves the ES conclusions unchanged (Section 8.9).
 
 ## 3.3 Limitations
 
@@ -669,7 +669,13 @@ The table gives the QLIKE gain from set A to set $s$, as a % of each model's set
 
 **Answer.** On the test, **the forest gains significantly more than the elastic net from richer features at 1 and 5 days, for both targets.** The hypothesis is supported at short horizons and not at 22 days.
 
-- **Two different mechanisms.** In most significant cases the forest improves while the elastic net gets worse, so part of the DiD is elastic-net fragility rather than extra information extracted by the forest.
+- **Two mechanisms, and the DiD reflects both.** The DiD adds the forest's change in loss to the elastic net's, so the two have to be read separately. Of the 11 significant cells:
+  - the forest's own loss falls in 9, by 2–16% of its set-A loss;
+  - the elastic net's loss rises in 10;
+  - both improve in 1 (SPY 5 days, A→B);
+  - in 2 the forest's loss also rises (SPY 5 days A→D; ES 5 days A→C), so those results come entirely from the elastic net's deterioration.
+
+  For example, at SPY 1 day A→B the forest's QLIKE falls by 0.03 (13%) and the elastic net's rises by 0.08 (35%), which gives the DiD of 0.11. The forest therefore does improve, but where the elastic net breaks down, most of the size of the DiD comes from that breakdown. The DiD cannot by itself say how much extra information the forest extracts.
 - **Clean cases.** Two comparisons do not rely on an elastic-net breakdown. For SPY at 5 days, A→B, both models gain, the forest +16% and the elastic net +4% ($p=0.003$). For ES at 1 day, A→D, the forest gains +15% while the elastic net loses 7% ($p<0.001$), so the forest uses the ES jump and semivariance block better.
 - **22 days.** Richer features help neither model, and the DiD is not significant.
 
@@ -743,6 +749,10 @@ Realized utility (eq. 14) in % per year; the maximum is 4.00. The two test colum
 
 ## 8.7 What drives the forecasts
 
+Figure 6 shows the inputs the winning SPY 1-day forests rely on. Impurity importance measures how the forest's splits are spread during training. It is not a causal effect, and it does not measure a feature's contribution to forecast accuracy.
+
+![*Figure 6.* Impurity importance of the twelve leading inputs, SPY target, $h=1$, random forest on sets B and C. Bars show the average share over the nine test re-fits; lines show the lowest and highest share across re-fits (`evaluation/importance_chart.m`).](figures/importance_test_SPY_h1.png){width=100%}
+
 Averaged over the nine test re-fits (impurity importance for the forests, coefficients for the elastic net):
 
 - **The winning SPY forests (sets B and C, 1 and 5 days) are driven by the implied-vol term slope** `iv_term`, ATM IV(1Y) − IV(1M). It carries 37% (set B) and 39% (set C) of importance at 1 day, and 33% and 31% at 5 days. Next come:
@@ -767,9 +777,9 @@ Averaged over the nine test re-fits (impurity importance for the forests, coeffi
 - **Fractional differencing in the test re-fits:** the 10Y yield and the 10Y − 3M spread are differenced in every re-fit ($d^*$ 0.10–0.40, retained correlation 0.96–0.97), and ATM 1Y implied vol in a third of them. Every other input passes ADF undifferenced.
 
 - **Shapley values** for the last test re-fit (forest on set D, $h=22$, forecasting 2026) agree with the impurity ranking. The IV term slope leads for both targets, followed by log VXN and the monthly negative-return average. For ES, the VIX3M − VIX spread and ATM 1M implied vol are next.
-- **ALE curves** (Figure 6) are steep at low values and flat beyond the training range: the forest cannot extrapolate.
+- **ALE curves** (Figure 7) are steep at low values and flat beyond the training range: the forest cannot extrapolate.
 
-![*Figure 6.* Accumulated local effects of the six most important features, random forest on set D, SPY target, $h=22$ (2026 re-fit).](figures/ale_test_SPY_h22_D_2026.png){width=80%}
+![*Figure 7.* Accumulated local effects of the six most important features, random forest on set D, SPY target, $h=22$ (2026 re-fit).](figures/ale_test_SPY_h22_D_2026.png){width=80%}
 
 ## 8.8 Memory in forecast errors
 
@@ -862,7 +872,7 @@ What the checks show:
 | 1-day ML gain over HAR | Large for both targets (forest 0.61–0.81) | SPY only (forest 0.85); ES none |
 | Set-A forest vs HAR | Beats HAR at 1 day | Does not beat HAR |
 | HAR vs Persistence | Not significantly better | Significantly better at every horizon |
-| RQ2 (forest gains more) | Only where the elastic net breaks | Yes at 1 and 5 days, partly through elastic-net fragility |
+| RQ2 (forest gains more) | Only where the elastic net breaks | Yes at 1 and 5 days, through both forest improvement and elastic-net deterioration |
 | RQ3 (ES aligns better with swaps) | Directionally yes | No |
 | Gains grow with the horizon | No | No |
 
@@ -1150,7 +1160,7 @@ Status key:
 | Late starts from first date + $\ell_\tau$; common days only (§3.2) | Done for raw and FFD values. Model inputs differ: once a feature enters a fold, its rows before the start date get the training median (report §3.2) | `ffd.m`, `walk_forward.m`, `evaluate_phase.m` |
 | Missing-day counts measured (§3.2) | Done (reproduced exactly) | `data_audit.m` |
 | Missing-day treatment (§3.2: "will be decided") | Done (rules frozen before the test; no target filled from another source; multi-day targets average the observed days; strict-rule robustness; complete-window check added after the test, Section 8.12) | `rv_config.m`, `data/build_design.m`; scenario `strict`; `evaluation/window_check.m` |
-| ES holiday rows rolled forward; dropping as robustness (§3.2) | Done as frozen; the instructor's confirmation, asked for on 16 October 2026, is still pending (report §3.2) | `data/load_panel.m`; scenario `holdrop` |
+| ES holiday rows rolled forward; dropping as robustness (§3.2) | Done; the instructor considered it reasonable (7 November 2026; report §3.2) | `data/load_panel.m`; scenario `holdrop` |
 | Linear forecasts floored at the training-window minimum RV (§4.1) | Done | `fit_har.m`, `fit_en.m` |
 | ADF and KPSS on every target and input, levels and logs, development sample only (§4.3) | Done (coded directly; Econometrics Toolbox not installed) | `adf_test.m`, `kpss_test.m`, `stationarity.m` |
 | Local Whittle and Bhatti's detectability-boundary estimator for RV memory (§4.3) | Done | `long_memory.m` |
