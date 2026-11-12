@@ -98,7 +98,7 @@ add('iv_skew_1m',ffill_limit(P.iv_skew_1m, 5), 'B', 'Bloomberg iv_surface', 0);
 add('iv_term',   ffill_limit(P.iv_term, 5),    'B', 'Bloomberg iv_surface', 0);
 add('t10y3m',    ffill_limit(P.t10y3m, 5),     'B', 'FRED T10Y3M', 0);
 add('dgs10',     ffill_limit(P.dgs10, 5),      'B', 'FRED DGS10', 0);
-add('vvix',      ffill_limit(P.vvix, 5),       'B', 'Cboe VVIX', 0);   % from 2007 (enters via coverage rule)
+add('vvix',      ffill_limit(P.vvix, 5),       'B', 'Cboe VVIX', 0);   % from Mar 2006 (enters via coverage rule)
 add('skew',      ffill_limit(P.skew, 5),       'B', 'Cboe SKEW', 0);
 add('vix9d_spread', ffill_limit(P.vix9d, 5) - vix, 'B', 'Cboe VIX9D, VIX', 0);   % from Jan 2011
 add('vix3m_spread', ffill_limit(P.vix3m, 5) - vix, 'B', 'Cboe VIX3M, VIX', 0);   % term structure, from Sep 2009
