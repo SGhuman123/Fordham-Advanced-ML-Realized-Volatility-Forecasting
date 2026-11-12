@@ -25,7 +25,7 @@ abstract: |
 ---
 
 ::: {custom-style="Block Text"}
-**Status (21 October 2026; implements proposal v5.4).** Everything in the proposal is implemented in one MATLAB pipeline and runs end to end. That covers data alignment and publication lags, the stationarity and long-memory diagnostics, fractional differencing chosen inside each training window, the Persistence benchmark, all three models on all four feature sets at every horizon for both targets, the walk-forward engine, the full evaluation suite and every robustness check. As proposal Section 5 prescribes, every setting was frozen on the development results (git tag `design-freeze`) before the 2018 – October 2026 test was run, once. Section 7 summarizes the development period that fixed the design. Section 8 reports the locked test, which is the basis for every conclusion.
+**Status (11 November 2026; implements proposal v5.4).** Everything in the proposal is implemented in one MATLAB pipeline and runs end to end. That covers data alignment and publication lags, the stationarity and long-memory diagnostics, fractional differencing chosen inside each training window, the Persistence benchmark, all three models on all four feature sets at every horizon for both targets, the walk-forward engine, the full evaluation suite and every robustness check. As proposal Section 5 prescribes, every setting was frozen on the development results (git tag `design-freeze`) before the 2018 – October 2026 test was run, once. Section 7 summarizes the development period that fixed the design. Section 8 reports the locked test, which is the basis for every conclusion. Work added after the test, following the instructor's comments, is labelled as such and never replaces the frozen results.
 :::
 
 # 1. Introduction and Motivation
@@ -439,7 +439,7 @@ $$\mathrm{DM}=\sqrt{\frac{T+1-2h+h(h-1)/T}{T}}\;\frac{\bar d}{\sqrt{\widehat{\ma
 
 EQNUM(13)
 
-- The long-run variance is Bartlett, with bandwidth $\max(\lceil1.5h\rceil,4(T/100)^{2/9})$ to cover the overlap of multi-day targets.
+- The long-run variance is Bartlett, with bandwidth $\max(\lceil1.5h\rceil,\lfloor4(T/100)^{2/9}\rfloor)$ to cover the overlap of multi-day targets.
 - The square-root factor in front is the Harvey–Leybourne–Newbold small-sample correction.
 - p-values come from Student $t_{T-1}$.
 
@@ -1100,8 +1100,8 @@ All code is one MATLAB pipeline in `Code/` (MATLAB R2026a with the Statistics an
 
 **How to run.**
 
-- `Code/run_parallel.sh dev all` regenerates every development result: the main design and the eleven robustness scenarios (about 35 minutes on a 14-core Mac).
-- `Code/run_parallel.sh test all` runs the locked test with `cfg.runLockedTest = true` (about 45 minutes).
+- `Code/run_parallel.sh dev all` regenerates every development result: the main design and the twelve robustness scenarios (about 35 minutes on a 14-core Mac).
+- `Code/run_parallel.sh test all` ran the locked test once, with `cfg.runLockedTest = true` (about 45 minutes). The switch is now `false`, and `run_job` refuses to overwrite saved test forecasts.
 - `python3 Report/build_report.py` rebuilds this document as `.docx` and `.pdf`.
 
 **Implementation choices the proposal leaves open** (all in `rv_config.m`, `data/build_design.m` or `models/walk_forward.m`):
@@ -1114,7 +1114,7 @@ All code is one MATLAB pipeline in `Code/` (MATLAB R2026a with the Statistics an
 | ADF specification | Constant; Schwert lag length |
 | Late-starting inputs | Enter a fold once they have three years of non-missing training data; from then on every missing row, including rows before the series starts, gets the training-window median (§3.2) |
 | Calendar flags | Next-session early close; days to the next session |
-| DM bandwidth | $\max(\lceil1.5h\rceil,4(T/100)^{2/9})$ |
+| DM bandwidth | $\max(\lceil1.5h\rceil,\lfloor4(T/100)^{2/9}\rfloor)$ |
 | MCS bootstrap | Block length $\max(h,\lfloor\sqrt T\rfloor)$; 5,000 draws |
 | High-RV threshold | 80th percentile of the monthly RV lag over 2005–2017 |
 | SPY rescaling in the swap check | Training ratio of close-to-close variance to RV |
@@ -1263,7 +1263,7 @@ Status key:
 | Excluded models not estimated (§4.8) | Done | — |
 | Optional exploratory boosting run (§4.8) | Done after the freeze, development only; test run skipped on the professor's advice (§7.4) | `fit_gb.m`, scenario `boost` |
 | Boundaries; re-fit after each year-end; development years once the window holds five years (§5) | Done | `walk_forward.m`, `rv_config.m` |
-| Tuning on the last two years; label gap (eq. 10) (§5) | Done | `walk_forward.m` |
+| Tuning on the last two years; label gap (eq. 11) (§5) | Done | `walk_forward.m` |
 | Availability timing and publication shifts (§5) | Done | `build_design.m` |
 | Rolling 10-year (8-year ES) robustness (§5) | Done | scenario `rolling` |
 | Locked 2018–2026 test examined once (§5) | Done, after the `design-freeze` tag, on 21 October 2026 rather than in late November as §8 planned (early benchmark look disclosed, Section 11) | `cfg.runLockedTest`; Section 8 |
