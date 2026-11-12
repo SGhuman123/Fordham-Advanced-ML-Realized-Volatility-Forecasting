@@ -355,7 +355,7 @@ The following are out of scope:
 - neural nets and LSTMs (gradient boosting appears only in the post-freeze exploratory run of Section 7.4);
 - forecast combinations.
 
-$\mathrm{VIX}^2$ remains the **market strike** in the variance-swap test, not a competing forecast. An exploratory gradient-boosting comparison was run after the design freeze, on the development period only (Section 7.4); it is not part of the frozen design or the locked test.
+$\mathrm{VIX}^2$ remains the **market strike** in the variance-swap test, not a competing forecast. An exploratory gradient-boosting comparison was run after the design freeze, on the development period only (Section 7.4); it is not part of the frozen design and, on the professor's advice, was not run on the locked test.
 
 # 5. Validation Design
 
@@ -585,6 +585,7 @@ GB is the best ML model in **none** of the six target–horizon cells (`success_
 - **MCS.** At 5 and 22 days for ES, sets B–D drop out of the 10% MCS; SPY set D drops at 22 days. At SPY 5 days every GB cell remains in the MCS despite ratios above 1 — none of those cells is close to the forest.
 - **MSE vs QLIKE.** In 7 of the 24 matched cells GB has a lower MSE ratio than the forest even when its QLIKE is worse (notably SPY 1-day B and C, and SPY 22-day B). QLIKE remains the primary loss; the MSE gap does not overturn the ranking.
 - **Interpretation.** Bagging averages noisy trees; boosting fits residuals step by step. On this noisy realized-variance target the forest's averaging is the more stable nonlinear model. That is a useful negative result for the report: under the same features, walk-forward and validation rule, restrained LSBoost does not displace the random forest.
+- **Locked test skipped.** On the professor's advice (7 November 2026), boosting was not run on the locked test, given its weak development results and long runtime; it could be explored if the project continues. `cfg.gb.allowTest` stays `false`.
 
 ### Multiple testing (Holm)
 
@@ -1171,7 +1172,7 @@ Status key:
 | Elastic net: $\alpha$ and $\lambda$ tuned; ridge and lasso special cases; coefficients reported (§4.6) | Done | `fit_en.m`, `explain_*.csv` |
 | Random forest; impurity importance (§4.7) | Done | `fit_rf.m` |
 | Excluded models not estimated (§4.8) | Done | — |
-| Optional exploratory boosting run (§4.8) | Done after the freeze, development only (§7.4) | `fit_gb.m`, scenario `boost` |
+| Optional exploratory boosting run (§4.8) | Done after the freeze, development only; test run skipped on the professor's advice (§7.4) | `fit_gb.m`, scenario `boost` |
 | Boundaries; re-fit after each year-end; development years once the window holds five years (§5) | Done | `walk_forward.m`, `rv_config.m` |
 | Tuning on the last two years; label gap (eq. 10) (§5) | Done | `walk_forward.m` |
 | Availability timing and publication shifts (§5) | Done | `build_design.m` |
