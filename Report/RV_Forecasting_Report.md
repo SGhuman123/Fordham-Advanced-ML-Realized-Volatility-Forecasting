@@ -353,7 +353,7 @@ The following are out of scope:
 - LogHAR, LevHAR, HAR-X, HAR-J/CJ, SHAR and HARQ;
 - $\mathrm{VIX}^2/252$ as a forecasting model;
 - neural nets and LSTMs (gradient boosting appears only in the post-freeze exploratory run of Section 7.4);
-- forecast combinations.
+- forecast combinations (a HAR + forest combination built from the saved forecasts is reported as exploratory in Section 8.13).
 
 $\mathrm{VIX}^2$ remains the **market strike** in the variance-swap test, not a competing forecast. An exploratory gradient-boosting comparison was run after the design freeze, on the development period only (Section 7.4); it is not part of the frozen design or the locked test.
 
@@ -968,6 +968,42 @@ ES has no missing NYSE session, and development has no missing Risk Lab day, so 
 
 Outputs: `window_check.csv` and `window_counts.csv` in `Output/tables/<phase>/main/`.
 
+## 8.13 HAR + random forest combination (exploratory, added after the test)
+
+Following the instructor's suggestion, we combined each forest with HAR:
+
+$$\widehat{\mathrm{RV}}^{\mathrm{ENS}}_{s}=w\,\widehat{\mathrm{RV}}^{\mathrm{RF}}_{s}+(1-w)\,\widehat{\mathrm{RV}}^{\mathrm{HAR}}$$
+
+EQNUM(17)
+
+- **What it uses.** The saved walk-forward forecasts only (`evaluation/ensemble_check.m`). Nothing is re-estimated, and the ten main forecasts reproduce `loss_*.csv` exactly.
+- **Weights.** The main rule is $w=0.5$ everywhere. As a second rule, $w\in\{0.25,0.5,0.75\}$ is chosen per target, horizon and set on the development common days (2015–2017) and then applied unchanged to the test.
+- **Scoring.** As in Section 8.1, on the same common days: QLIKE and MSE ratios, one-sided DM tests against HAR and against the forest alone, and the 10% MCS with the four combinations added. Holm is taken over the 24 combinations of each rule.
+- **Status.** The idea came after the test results were known, so every test number here is **exploratory**. None of it changes the frozen results or the success criterion.
+
+**Test results, equal weights** (QLIKE ratio vs HAR; **bold** = beats HAR after the Holm correction over the 24 combinations; the forest alone in parentheses):
+
+| Target | $h$ | HAR + RF A | HAR + RF B | HAR + RF C | HAR + RF D |
+|---|---|---|---|---|---|
+| SPY | 1 | **0.959** (0.982) | **0.879** (0.857) | **0.874** (0.846) | **0.890** (0.922) |
+| SPY | 5 | 0.990 (1.051) | **0.894** (0.883) | **0.909** (0.930) | 0.949 (1.149) |
+| SPY | 22 | 1.012 (1.085) | 0.993 (1.055) | 0.988 (1.043) | 1.046 (1.270) |
+| ES | 1 | 0.990 (1.133) | **0.913** (1.051) | **0.914** (1.006) | **0.908** (0.968) |
+| ES | 5 | 1.003 (1.344) | 0.954 (1.321) | 0.993 (1.432) | 0.941 (1.057) |
+| ES | 22 | 1.028 (1.229) | 1.111 (1.348) | 1.139 (1.399) | 1.042 (1.213) |
+
+- **The combination is safer than the forest.** Its QLIKE is below the forest's in 21 of the 24 cells, by up to 31%. The exceptions are SPY 1-day sets B and C and SPY 5-day set B, where the forest alone is already the best forecast. Against the forest alone, 14 of the 24 gains are significant at 5% before correction and 2 after Holm (SPY 5-day set A, ES 5-day set D).
+- **It beats HAR in more places.** Nine of the 24 combinations beat HAR after Holm: every SPY 1-day set, SPY 5-day sets B and C, and ES 1-day sets B, C and D. With the forest alone, only the SPY 1-day forests on sets B and C survive Holm (Section 8.10; that family has 48 tests, this one 24). The most notable new cases are ES at 1 day, where no forest beats HAR (Section 8.1), and SPY 1-day set D. At 22 days no combination beats HAR.
+- **Headline cell (SPY, 1 day, set C).** The combination scores 0.874 against HAR ($p<0.001$; Holm $<0.001$), 3% worse than the forest alone (0.846). Under MSE it scores 0.799 (one-sided $p=0.026$), but that does not survive Holm (0.64).
+- **Why: it removes the COVID failure.** In March–May 2020 the 1-day forests trained from 2010 were 2.6–4.5 times worse than HAR for ES and 2.25 times for SPY set D (Section 8.5). Their combinations with HAR score 1.06–1.28 for ES and 0.95 for SPY set D. On ES extreme days the 1-day ratio falls from 0.89–1.36 (forests) to 0.74–0.96. Averaging with HAR caps how far the forest can miss when volatility leaves its training range.
+- **Limits.**
+  - Under MSE the ES combinations are still 1.13–1.30 times worse than HAR at 1 and 5 days, because the March 2020 misses still dominate a squared loss.
+  - The MCS keeps every combination, every forest and HAR on the test, so it does not separate them.
+- **Development-chosen weights do worse.** The calm development years favour the forest, so the development rule picks $w=0.75$ in 18 of the 24 cells. On the test this rule has only 5 combinations that beat HAR after Holm, against 9 for equal weights. At ES 1 day the COVID ratios rise to 1.41–1.93. On development data itself the forest alone beats the equal-weight combination at 1 day (by 4–16%).
+- **Reading.** A fixed 50/50 combination keeps most of the forest's gain where the forest works (SPY, 1 and 5 days) and protects against the training-history failure where it does not (ES, set D). It does not help at 22 days. Because the weights and the idea came after the test, this is evidence for future work, not a test of the frozen design.
+
+Outputs: `ensemble.csv` (both phases and both weight rules) and `ensemble_weights.csv` (development QLIKE for each weight) in `Output/tables/test/main/`.
+
 # 9. Discussion and Relation to the Literature
 
 The project folder holds the three reference papers and the long-memory working paper cited in Section 4.3.
@@ -1036,7 +1072,7 @@ The team kept the proposal's specification rather than add a guard after seeing 
 9. **Hand-coded tests.** ADF and KPSS are coded directly rather than taken from the Econometrics Toolbox. They reproduce the textbook behaviour on simulated white noise and random walks.
 10. **An earlier look at two benchmarks.** Before the team adopted a single pipeline, a standalone HAR script also scored HAR and Persistence on 2018–2026 (20 October 2026). Neither benchmark has tuning parameters, and no design choice used those numbers.
 
-**Exploratory next steps** (outside the frozen design): an elastic net with an unpenalized HAR block or a $\lambda$ floor; forests on log RV, or forests combined with HAR; a training window that adds pre-2010 Oxford-Man jump measures to the ES models. An LSTM, which the professor noted would significantly expand the project, is left to future work; both Rahimikia & Poon (2026) and Kılıç (2026) use LSTMs, so it is the natural next ML benchmark.
+**Exploratory next steps** (outside the frozen design): an elastic net with an unpenalized HAR block or a $\lambda$ floor; forests on log RV; HAR + forest combinations with weights fixed in advance (a first exploratory look is in Section 8.13); a training window that adds pre-2010 Oxford-Man jump measures to the ES models. An LSTM, which the professor noted would significantly expand the project, is left to future work; both Rahimikia & Poon (2026) and Kılıç (2026) use LSTMs, so it is the natural next ML benchmark.
 
 # 12. Implementation and Code
 
@@ -1058,7 +1094,7 @@ All code is one MATLAB pipeline in `Code/` (MATLAB R2026a with the Statistics an
 | Random forest | `models/fit_rf.m` (`TreeBagger`, `bayesopt`) |
 | Gradient boosting (exploratory, §7.4) | `models/fit_gb.m` (`fitrensemble`, LSBoost) |
 | Walk-forward and scenarios | `models/walk_forward.m`, `run_job.m`, `data/make_spec.m` (main and robustness scenarios), `rv_config.m` (every setting and the test lock) |
-| Evaluation and explanation | `evaluation/evaluate_phase.m`, `qlike.m`, `dm_test.m`, `mcs.m`; `evaluation/multiple_testing.m`, `holm_rq2_check.m`, `holm_adjust.m` (Holm corrections from the saved tables); `evaluation/window_check.m`, `utility_test.m`, `load_forecasts.m` (complete-window check; utility tests); `evaluation/explain_rf.m` (Shapley, ALE); `evaluation/explain_spikes.m` (day-level Shapley on spike days), `iv_glitch_check.m` (20 Sep 2022 IV error) |
+| Evaluation and explanation | `evaluation/evaluate_phase.m`, `qlike.m`, `dm_test.m`, `mcs.m`; `evaluation/multiple_testing.m`, `holm_rq2_check.m`, `holm_adjust.m` (Holm corrections from the saved tables); `evaluation/window_check.m`, `utility_test.m`, `load_forecasts.m` (complete-window check; utility tests); `evaluation/explain_rf.m` (Shapley, ALE); `evaluation/explain_spikes.m` (day-level Shapley on spike days), `iv_glitch_check.m` (20 Sep 2022 IV error); `evaluation/ensemble_check.m` (HAR + forest combination, §8.13) |
 | Drivers and report | `run_parallel.sh`, `main.m`; `evaluation/report_figures.m`, `Report/build_report.py` |
 
 **How to run.**
@@ -1264,6 +1300,7 @@ Status key:
 | `.../holm_ml_vs_har.csv`, `holm_scorecard.csv`, `holm_varswap.csv` | Holm-adjusted p-values: every ML forecast vs HAR (QLIKE and one-sided MSE), the scorecard rows, the variance-swap timing rules |
 | `Output/tables/test/main/spike_shap_SPY_h1_C.csv` | Day-level Shapley values of the winning forest on spike days, with each feature's share of the push and its value (Section 8.7) |
 | `Output/tables/test/main/iv_glitch_check.csv` | Headline and 2022 bear-market ratios with and without 20 Sep 2022 (Section 8.7) |
+| `Output/tables/test/main/ensemble.csv`, `ensemble_weights.csv` | HAR + forest combinations: scores against HAR and against the forest, MCS and Holm, for both phases and weight rules; development QLIKE for each weight (Section 8.13) |
 | `.../window_check.csv`, `window_counts.csv` | Complete-window vs partial-window scores (Section 8.12) and the observed days in each retained target window |
 | `.../utility_tests.csv` | Daily-utility DM tests against HAR, with gains in basis points and Holm-adjusted $p$ (Section 8.6) |
 | `Output/tables/audit_*.csv` | Missing-data counts, the test-origin table of proposal 3.2 and the Risk Lab vs Oxford-Man cross-check |
